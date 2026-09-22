@@ -55,3 +55,12 @@ export function useDeleteItem(listId: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['items', listId] }),
   });
 }
+
+export function useUpdateItem(listId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ itemId, data }: { itemId: string; data: Partial<ShoppingItem> }) => itemsApi.update(itemId, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['items', listId] }),
+  });
+}
+

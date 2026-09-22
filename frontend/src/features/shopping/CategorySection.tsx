@@ -8,7 +8,8 @@ export const CategorySection: React.FC<{
   items: IShoppingItem[];
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
-}> = ({ category, items, onToggle, onDelete }) => {
+  onUpdateQty?: (id: string, newQty: number) => void;
+}> = ({ category, items, onToggle, onDelete, onUpdateQty }) => {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
@@ -33,7 +34,13 @@ export const CategorySection: React.FC<{
       {isOpen && (
         <div className="space-y-1.5">
           {items.map((item) => (
-            <ShoppingItem key={item.id} item={item} onToggle={onToggle} onDelete={onDelete} />
+            <ShoppingItem
+              key={item.id}
+              item={item}
+              onToggle={onToggle}
+              onDelete={onDelete}
+              onUpdateQty={onUpdateQty}
+            />
           ))}
         </div>
       )}
