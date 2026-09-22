@@ -20,6 +20,12 @@ engine_kwargs = {
 
 db_url = getattr(settings, "DATABASE_URL", "sqlite+aiosqlite:///./omnicart.db")
 
+# Normalize Supabase / PostgreSQL URLs for asyncpg
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+elif db_url.startswith("postgresql://") and "+asyncpg" not in db_url:
+    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
 if "sqlite" in db_url:
     engine_kwargs["connect_args"] = {"check_same_thread": False}
 else:

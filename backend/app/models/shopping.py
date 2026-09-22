@@ -8,6 +8,7 @@ class ShoppingList(Base, TimestampMixin):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    family_id = Column(UUID(as_uuid=True), ForeignKey("families.id", ondelete="SET NULL"), nullable=True)
     name = Column(String, nullable=False)
     emoji = Column(String, default="🛒", nullable=False)
     color = Column(String, default="#10b981", nullable=False)

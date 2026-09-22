@@ -1,9 +1,9 @@
 -- ==============================================================================
--- OmniCart AI 2.0 — Supabase PostgreSQL Production Schema
--- Extensions, Tables, Constraints, Indexes, RLS Policies, Realtime Publication
+-- OmniCart AI 2.0 — Supabase PostgreSQL Production Schema & Migrations
+-- Complete DDL matching all 24 SQLAlchemy models, RLS, Storage & Realtime
 -- ==============================================================================
 
--- Enable UUID extension
+-- Extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
@@ -67,13 +67,27 @@ CREATE INDEX IF NOT EXISTS ix_products_norm ON public.products(normalized_name);
 
 -- 5. Product Aliases
 CREATE TABLE IF NOT EXISTS public.product_aliases (
-    id SERIAL PRIMARY KEY,
-    alias TEXT UNIQUE NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
-    language TEXT NOT NULL DEFAULT 'ru'
+    alias TEXT UNIQUE NOT NULL,
+    language TEXT NOT NULL DEFAULT 'ru',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    CONSTRAINT uq_product_alias UNIQUE (product_id, alias)
 );
+CREATE INDEX IF NOT EXISTS ix_product_aliases_alias ON public.product_aliases(alias);
 
--- 6. Families (Household workspaces)
+-- 6. Favorites
+CREATE TABLE IF NOT EXISTS public.favorites (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    CONSTRAINT uq_user_favorite UNIQUE (user_id, product_id)
+);
+CREATE INDEX IF NOT EXISTS ix_favorites_user ON public.favorites(user_id);
+
+-- 7. Families (Household workspaces)
 CREATE TABLE IF NOT EXISTS public.families (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
@@ -83,36 +97,41 @@ CREATE TABLE IF NOT EXISTS public.families (
     deleted_at TIMESTAMPTZ
 );
 
--- 7. Family Members
+-- 8. Family Members
 CREATE TABLE IF NOT EXISTS public.family_members (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     family_id UUID NOT NULL REFERENCES public.families(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     role TEXT NOT NULL DEFAULT 'member', -- owner, admin, member, viewer
     joined_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    UNIQUE(family_id, user_id)
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT uq_family_member UNIQUE (family_id, user_id)
 );
+CREATE INDEX IF NOT EXISTS ix_family_members_user ON public.family_members(user_id);
+CREATE INDEX IF NOT EXISTS ix_family_members_fam ON public.family_members(family_id);
 
--- 8. Family Invites
+-- 9. Family Invites
 CREATE TABLE IF NOT EXISTS public.family_invites (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     family_id UUID NOT NULL REFERENCES public.families(id) ON DELETE CASCADE,
-    code TEXT UNIQUE NOT NULL,
-    role TEXT NOT NULL DEFAULT 'member',
+    token TEXT UNIQUE NOT NULL,
+    created_by UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     expires_at TIMESTAMPTZ NOT NULL,
     accepted_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
     accepted_at TIMESTAMPTZ,
+    is_used BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
+CREATE INDEX IF NOT EXISTS ix_family_invites_token ON public.family_invites(token);
 
--- 9. Shopping Lists
+-- 10. Shopping Lists
 CREATE TABLE IF NOT EXISTS public.shopping_lists (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     family_id UUID REFERENCES public.families(id) ON DELETE SET NULL,
     name TEXT NOT NULL,
-    emoji TEXT DEFAULT '🛒',
-    color TEXT DEFAULT '#10B981',
+    emoji TEXT NOT NULL DEFAULT '🛒',
+    color TEXT NOT NULL DEFAULT '#10B981',
     is_default BOOLEAN NOT NULL DEFAULT FALSE,
     is_archived BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
@@ -121,34 +140,42 @@ CREATE TABLE IF NOT EXISTS public.shopping_lists (
 );
 CREATE INDEX IF NOT EXISTS ix_lists_owner ON public.shopping_lists(owner_id);
 
--- 10. Shopping List Members (RBAC)
+-- 11. Shopping List Members (RBAC)
 CREATE TABLE IF NOT EXISTS public.shopping_list_members (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     list_id UUID NOT NULL REFERENCES public.shopping_lists(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     role TEXT NOT NULL DEFAULT 'editor', -- owner, editor, viewer
+    added_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
     joined_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    UNIQUE(list_id, user_id)
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    CONSTRAINT uq_shopping_list_member UNIQUE (list_id, user_id)
 );
+CREATE INDEX IF NOT EXISTS ix_list_members_list ON public.shopping_list_members(list_id);
+CREATE INDEX IF NOT EXISTS ix_list_members_user ON public.shopping_list_members(user_id);
 
--- 11. Shopping Items
+-- 12. Shopping Items
 CREATE TABLE IF NOT EXISTS public.shopping_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     list_id UUID NOT NULL REFERENCES public.shopping_lists(id) ON DELETE CASCADE,
     product_id UUID REFERENCES public.products(id) ON DELETE SET NULL,
     name TEXT NOT NULL,
-    quantity NUMERIC(10, 2) NOT NULL DEFAULT 1.00,
+    normalized_name TEXT NOT NULL DEFAULT '',
+    quantity NUMERIC(10, 3) NOT NULL DEFAULT 1.000,
     unit TEXT NOT NULL DEFAULT 'шт',
-    category_id INT REFERENCES public.categories(id) ON DELETE SET NULL,
-    note TEXT,
     estimated_price NUMERIC(12, 2),
     actual_price NUMERIC(12, 2),
+    currency TEXT NOT NULL DEFAULT 'UZS',
+    category_id INT REFERENCES public.categories(id) ON DELETE SET NULL,
+    note TEXT,
+    priority INT NOT NULL DEFAULT 0,
     is_purchased BOOLEAN NOT NULL DEFAULT FALSE,
-    sort_order INT NOT NULL DEFAULT 0,
-    client_mutation_id TEXT,
     created_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
     purchased_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
     purchased_at TIMESTAMPTZ,
+    version INT NOT NULL DEFAULT 1,
+    client_mutation_id TEXT UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
     deleted_at TIMESTAMPTZ
@@ -156,90 +183,172 @@ CREATE TABLE IF NOT EXISTS public.shopping_items (
 CREATE INDEX IF NOT EXISTS ix_items_list ON public.shopping_items(list_id);
 CREATE INDEX IF NOT EXISTS ix_items_purchased ON public.shopping_items(list_id, is_purchased);
 
--- 12. Budgets
+-- 13. Stores Catalog
+CREATE TABLE IF NOT EXISTS public.stores (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    address TEXT,
+    city TEXT,
+    type TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- 14. Markets Catalog
+CREATE TABLE IF NOT EXISTS public.markets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    city TEXT,
+    type TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- 15. Price Observations
+CREATE TABLE IF NOT EXISTS public.price_observations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+    store_id UUID REFERENCES public.stores(id) ON DELETE SET NULL,
+    market_id UUID REFERENCES public.markets(id) ON DELETE SET NULL,
+    price NUMERIC(12, 2) NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'UZS',
+    unit TEXT NOT NULL DEFAULT 'шт',
+    source TEXT NOT NULL,
+    reported_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
+    observed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    confidence FLOAT NOT NULL DEFAULT 0.5
+);
+CREATE INDEX IF NOT EXISTS ix_prices_prod ON public.price_observations(product_id);
+
+-- 16. Budgets
 CREATE TABLE IF NOT EXISTS public.budgets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    family_id UUID REFERENCES public.families(id) ON DELETE CASCADE,
     list_id UUID REFERENCES public.shopping_lists(id) ON DELETE CASCADE,
-    amount NUMERIC(12, 2) NOT NULL,
-    spent_amount NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    name TEXT,
+    amount NUMERIC(14, 2) NOT NULL,
+    spent_amount NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
     currency TEXT NOT NULL DEFAULT 'UZS',
     period TEXT NOT NULL DEFAULT 'monthly', -- monthly, weekly
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    start_date DATE,
+    end_date DATE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
+CREATE INDEX IF NOT EXISTS ix_budgets_user ON public.budgets(user_id);
 
--- 13. Purchase History
+-- 17. Purchase History
 CREATE TABLE IF NOT EXISTS public.purchase_history (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    list_id UUID REFERENCES public.shopping_lists(id) ON DELETE SET NULL,
-    product_id UUID REFERENCES public.products(id) ON DELETE SET NULL,
     item_name TEXT NOT NULL,
-    quantity NUMERIC(10, 2) NOT NULL DEFAULT 1.00,
+    product_id UUID REFERENCES public.products(id) ON DELETE SET NULL,
+    quantity NUMERIC(10, 3) NOT NULL DEFAULT 1.000,
     unit TEXT NOT NULL DEFAULT 'шт',
-    price NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    price NUMERIC(12, 2),
     currency TEXT NOT NULL DEFAULT 'UZS',
-    category_id INT REFERENCES public.categories(id) ON DELETE SET NULL,
-    store_name TEXT,
-    purchased_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+    store_id UUID REFERENCES public.stores(id) ON DELETE SET NULL,
+    purchased_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 CREATE INDEX IF NOT EXISTS ix_history_user ON public.purchase_history(user_id, purchased_at DESC);
 
--- 14. Smart Reorder & Recurring
-CREATE TABLE IF NOT EXISTS public.smart_reorder_events (
+-- 18. Recurring Items
+CREATE TABLE IF NOT EXISTS public.recurring_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    product_id UUID REFERENCES public.products(id) ON DELETE SET NULL,
-    product_name TEXT NOT NULL,
-    estimated_interval_days INT NOT NULL,
-    last_purchase_at TIMESTAMPTZ NOT NULL,
-    next_expected_date DATE NOT NULL,
-    confidence NUMERIC(3, 2) NOT NULL DEFAULT 0.85,
-    status TEXT NOT NULL DEFAULT 'pending', -- pending, accepted, dismissed
-    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
-);
-
-CREATE TABLE IF NOT EXISTS public.recurring_rules (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    list_id UUID NOT NULL REFERENCES public.shopping_lists(id) ON DELETE CASCADE,
-    item_name TEXT NOT NULL,
-    quantity NUMERIC(10, 2) NOT NULL DEFAULT 1.00,
+    product_id UUID REFERENCES public.products(id) ON DELETE CASCADE,
+    list_id UUID REFERENCES public.shopping_lists(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    quantity NUMERIC(10, 3) NOT NULL DEFAULT 1.000,
     unit TEXT NOT NULL DEFAULT 'шт',
     interval_days INT NOT NULL DEFAULT 7,
     last_added_at TIMESTAMPTZ,
-    next_due_date DATE NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+    next_due_at TIMESTAMPTZ,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
+CREATE INDEX IF NOT EXISTS ix_recurring_user ON public.recurring_items(user_id);
 
--- 15. Activity Logs (Realtime feed)
-CREATE TABLE IF NOT EXISTS public.activity_logs (
+-- 19. Smart Reorder Events
+CREATE TABLE IF NOT EXISTS public.smart_reorder_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    product_id UUID REFERENCES public.products(id) ON DELETE CASCADE,
+    product_name TEXT NOT NULL,
+    confidence FLOAT NOT NULL DEFAULT 0.85,
+    estimated_interval_days FLOAT NOT NULL DEFAULT 7.0,
+    last_purchase_at TIMESTAMPTZ NOT NULL,
+    next_expected_at TIMESTAMPTZ NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending', -- pending, accepted, dismissed
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+CREATE INDEX IF NOT EXISTS ix_reorder_user ON public.smart_reorder_events(user_id, status);
+
+-- 20. Activity Events (Realtime audit trail)
+CREATE TABLE IF NOT EXISTS public.activity_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     family_id UUID REFERENCES public.families(id) ON DELETE CASCADE,
-    list_id UUID REFERENCES public.shopping_lists(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    action TEXT NOT NULL, -- item_added, item_completed, item_deleted, member_joined
-    details JSONB NOT NULL DEFAULT '{}'::jsonb,
+    event_type TEXT NOT NULL, -- item_added, item_purchased, item_deleted, member_joined
+    entity_type TEXT NOT NULL,
+    entity_id UUID,
+    data JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
-CREATE INDEX IF NOT EXISTS ix_activity_family ON public.activity_logs(family_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS ix_activity_family ON public.activity_events(family_id, created_at DESC);
 
--- 16. Notifications
+-- 21. Notifications
 CREATE TABLE IF NOT EXISTS public.notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    type TEXT NOT NULL,
     title TEXT NOT NULL,
     body TEXT NOT NULL,
-    type TEXT NOT NULL DEFAULT 'info',
     data JSONB NOT NULL DEFAULT '{}'::jsonb,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+CREATE INDEX IF NOT EXISTS ix_notifications_user ON public.notifications(user_id, is_read);
+
+-- 22. Reminders
+CREATE TABLE IF NOT EXISTS public.reminders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    remind_at TIMESTAMPTZ NOT NULL,
+    is_completed BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+CREATE INDEX IF NOT EXISTS ix_reminders_user ON public.reminders(user_id, remind_at);
+
+-- 23. AI Requests Log
+CREATE TABLE IF NOT EXISTS public.ai_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL,
+    model TEXT NOT NULL,
+    operation TEXT NOT NULL,
+    tokens_input INT NOT NULL DEFAULT 0,
+    tokens_output INT NOT NULL DEFAULT 0,
+    latency_ms INT NOT NULL DEFAULT 0,
+    status TEXT NOT NULL,
+    error TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+CREATE INDEX IF NOT EXISTS ix_ai_requests_user ON public.ai_requests(user_id);
+
+-- 24. Feature Flags
+CREATE TABLE IF NOT EXISTS public.feature_flags (
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    description TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
 -- ==============================================================================
@@ -250,51 +359,95 @@ ALTER TABLE public.user_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.shopping_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.shopping_list_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.shopping_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.budgets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.families ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.family_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.family_invites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.budgets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.purchase_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.recurring_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.smart_reorder_events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activity_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reminders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_requests ENABLE ROW LEVEL SECURITY;
+
+-- Helper function: get current app user id from Supabase auth.uid() or claim
+CREATE OR REPLACE FUNCTION public.current_app_user_id()
+RETURNS UUID AS $$
+BEGIN
+    RETURN COALESCE(
+        auth.uid(),
+        NULLIF(current_setting('request.jwt.claims', true)::jsonb->>'sub', '')::UUID
+    );
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
 -- Users policies
-CREATE POLICY users_view_own ON public.users
-    FOR SELECT USING (auth.uid() = id OR current_setting('request.jwt.claims', true)::jsonb->>'sub' = id::text);
+CREATE POLICY users_select ON public.users
+    FOR SELECT USING (id = public.current_app_user_id());
 
-CREATE POLICY users_update_own ON public.users
-    FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY users_update ON public.users
+    FOR UPDATE USING (id = public.current_app_user_id());
 
--- Shopping Lists: owners & members
+-- User Settings policies
+CREATE POLICY user_settings_select ON public.user_settings
+    FOR SELECT USING (user_id = public.current_app_user_id());
+
+CREATE POLICY user_settings_all ON public.user_settings
+    FOR ALL USING (user_id = public.current_app_user_id());
+
+-- Shopping Lists: Owner or Member
 CREATE POLICY lists_select ON public.shopping_lists
     FOR SELECT USING (
-        owner_id = auth.uid() OR
+        owner_id = public.current_app_user_id() OR
         EXISTS (
             SELECT 1 FROM public.shopping_list_members m
-            WHERE m.list_id = shopping_lists.id AND m.user_id = auth.uid()
+            WHERE m.list_id = shopping_lists.id AND m.user_id = public.current_app_user_id()
         )
     );
 
 CREATE POLICY lists_insert ON public.shopping_lists
-    FOR INSERT WITH CHECK (owner_id = auth.uid());
+    FOR INSERT WITH CHECK (owner_id = public.current_app_user_id());
 
 CREATE POLICY lists_update ON public.shopping_lists
     FOR UPDATE USING (
-        owner_id = auth.uid() OR
+        owner_id = public.current_app_user_id() OR
         EXISTS (
             SELECT 1 FROM public.shopping_list_members m
-            WHERE m.list_id = shopping_lists.id AND m.user_id = auth.uid() AND m.role IN ('owner', 'editor')
+            WHERE m.list_id = shopping_lists.id AND m.user_id = public.current_app_user_id() AND m.role IN ('owner', 'editor')
         )
     );
 
--- Shopping Items: view if list member, edit if owner/editor
+CREATE POLICY lists_delete ON public.shopping_lists
+    FOR DELETE USING (owner_id = public.current_app_user_id());
+
+-- Shopping List Members
+CREATE POLICY list_members_select ON public.shopping_list_members
+    FOR SELECT USING (
+        user_id = public.current_app_user_id() OR
+        EXISTS (
+            SELECT 1 FROM public.shopping_lists l
+            WHERE l.id = shopping_list_members.list_id AND l.owner_id = public.current_app_user_id()
+        )
+    );
+
+CREATE POLICY list_members_modify ON public.shopping_list_members
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.shopping_lists l
+            WHERE l.id = shopping_list_members.list_id AND l.owner_id = public.current_app_user_id()
+        )
+    );
+
+-- Shopping Items: SELECT allowed for list members; MUTATION allowed ONLY for owner/editor (VIEWERS DENIED)
 CREATE POLICY items_select ON public.shopping_items
     FOR SELECT USING (
         EXISTS (
             SELECT 1 FROM public.shopping_lists l
             WHERE l.id = shopping_items.list_id AND (
-                l.owner_id = auth.uid() OR
-                EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = l.id AND m.user_id = auth.uid())
+                l.owner_id = public.current_app_user_id() OR
+                EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = l.id AND m.user_id = public.current_app_user_id())
             )
         )
     );
@@ -304,8 +457,8 @@ CREATE POLICY items_insert ON public.shopping_items
         EXISTS (
             SELECT 1 FROM public.shopping_lists l
             WHERE l.id = shopping_items.list_id AND (
-                l.owner_id = auth.uid() OR
-                EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = l.id AND m.user_id = auth.uid() AND m.role IN ('owner', 'editor'))
+                l.owner_id = public.current_app_user_id() OR
+                EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = l.id AND m.user_id = public.current_app_user_id() AND m.role IN ('owner', 'editor'))
             )
         )
     );
@@ -315,8 +468,8 @@ CREATE POLICY items_update ON public.shopping_items
         EXISTS (
             SELECT 1 FROM public.shopping_lists l
             WHERE l.id = shopping_items.list_id AND (
-                l.owner_id = auth.uid() OR
-                EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = l.id AND m.user_id = auth.uid() AND m.role IN ('owner', 'editor'))
+                l.owner_id = public.current_app_user_id() OR
+                EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = l.id AND m.user_id = public.current_app_user_id() AND m.role IN ('owner', 'editor'))
             )
         )
     );
@@ -326,13 +479,137 @@ CREATE POLICY items_delete ON public.shopping_items
         EXISTS (
             SELECT 1 FROM public.shopping_lists l
             WHERE l.id = shopping_items.list_id AND (
-                l.owner_id = auth.uid() OR
-                EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = l.id AND m.user_id = auth.uid() AND m.role IN ('owner', 'editor'))
+                l.owner_id = public.current_app_user_id() OR
+                EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = l.id AND m.user_id = public.current_app_user_id() AND m.role IN ('owner', 'editor'))
             )
         )
     );
 
--- Enable Realtime Publication
+-- Favorites
+CREATE POLICY favorites_all ON public.favorites
+    FOR ALL USING (user_id = public.current_app_user_id());
+
+-- Families
+CREATE POLICY families_select ON public.families
+    FOR SELECT USING (
+        created_by = public.current_app_user_id() OR
+        EXISTS (
+            SELECT 1 FROM public.family_members m
+            WHERE m.family_id = families.id AND m.user_id = public.current_app_user_id() AND m.is_active = TRUE
+        )
+    );
+
+CREATE POLICY families_insert ON public.families
+    FOR INSERT WITH CHECK (created_by = public.current_app_user_id());
+
+CREATE POLICY families_update ON public.families
+    FOR UPDATE USING (
+        created_by = public.current_app_user_id() OR
+        EXISTS (
+            SELECT 1 FROM public.family_members m
+            WHERE m.family_id = families.id AND m.user_id = public.current_app_user_id() AND m.role IN ('owner', 'admin') AND m.is_active = TRUE
+        )
+    );
+
+CREATE POLICY families_delete ON public.families
+    FOR DELETE USING (created_by = public.current_app_user_id());
+
+-- Family Members
+CREATE POLICY family_members_select ON public.family_members
+    FOR SELECT USING (
+        user_id = public.current_app_user_id() OR
+        EXISTS (
+            SELECT 1 FROM public.families f
+            WHERE f.id = family_members.family_id AND (
+                f.created_by = public.current_app_user_id() OR
+                EXISTS (SELECT 1 FROM public.family_members m2 WHERE m2.family_id = f.id AND m2.user_id = public.current_app_user_id() AND m2.is_active = TRUE)
+            )
+        )
+    );
+
+CREATE POLICY family_members_modify ON public.family_members
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.families f
+            WHERE f.id = family_members.family_id AND (
+                f.created_by = public.current_app_user_id() OR
+                EXISTS (SELECT 1 FROM public.family_members m WHERE m.family_id = f.id AND m.user_id = public.current_app_user_id() AND m.role IN ('owner', 'admin'))
+            )
+        )
+    );
+
+-- Family Invites
+CREATE POLICY family_invites_select ON public.family_invites
+    FOR SELECT USING (
+        created_by = public.current_app_user_id() OR
+        is_used = FALSE
+    );
+
+CREATE POLICY family_invites_all ON public.family_invites
+    FOR ALL USING (created_by = public.current_app_user_id());
+
+-- Budgets
+CREATE POLICY budgets_all ON public.budgets
+    FOR ALL USING (user_id = public.current_app_user_id());
+
+-- Purchase History
+CREATE POLICY history_all ON public.purchase_history
+    FOR ALL USING (user_id = public.current_app_user_id());
+
+-- Recurring Items
+CREATE POLICY recurring_all ON public.recurring_items
+    FOR ALL USING (user_id = public.current_app_user_id());
+
+-- Smart Reorder Events
+CREATE POLICY reorder_all ON public.smart_reorder_events
+    FOR ALL USING (user_id = public.current_app_user_id());
+
+-- Activity Events
+CREATE POLICY activity_select ON public.activity_events
+    FOR SELECT USING (
+        user_id = public.current_app_user_id() OR
+        EXISTS (
+            SELECT 1 FROM public.family_members m
+            WHERE m.family_id = activity_events.family_id AND m.user_id = public.current_app_user_id() AND m.is_active = TRUE
+        )
+    );
+
+CREATE POLICY activity_insert ON public.activity_events
+    FOR INSERT WITH CHECK (user_id = public.current_app_user_id());
+
+-- Notifications
+CREATE POLICY notifications_all ON public.notifications
+    FOR ALL USING (user_id = public.current_app_user_id());
+
+-- Reminders
+CREATE POLICY reminders_all ON public.reminders
+    FOR ALL USING (user_id = public.current_app_user_id());
+
+-- AI Requests
+CREATE POLICY ai_requests_all ON public.ai_requests
+    FOR ALL USING (user_id = public.current_app_user_id());
+
+-- ==============================================================================
+-- Storage Buckets & Policies
+-- ==============================================================================
+INSERT INTO storage.buckets (id, name, public) VALUES ('receipts', 'receipts', FALSE) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', TRUE) ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Users can upload receipts" ON storage.objects
+    FOR INSERT WITH CHECK (bucket_id = 'receipts' AND (auth.uid()::text = (storage.foldername(name))[1]));
+
+CREATE POLICY "Users can view own receipts" ON storage.objects
+    FOR SELECT USING (bucket_id = 'receipts' AND (auth.uid()::text = (storage.foldername(name))[1]));
+
+CREATE POLICY "Avatars are publicly viewable" ON storage.objects
+    FOR SELECT USING (bucket_id = 'avatars');
+
+CREATE POLICY "Users can upload own avatar" ON storage.objects
+    FOR INSERT WITH CHECK (bucket_id = 'avatars' AND (auth.uid()::text = (storage.foldername(name))[1]));
+
+-- ==============================================================================
+-- Supabase Realtime Publication
+-- ==============================================================================
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -344,10 +621,12 @@ END $$;
 
 ALTER PUBLICATION supabase_realtime ADD TABLE public.shopping_items;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.shopping_lists;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.activity_logs;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.activity_events;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
 
--- Seed Default Categories
+-- ==============================================================================
+-- Default Seed Data
+-- ==============================================================================
 INSERT INTO public.categories (name, emoji, sort_order) VALUES
 ('Овощи и фрукты', '🥦', 1),
 ('Молочные продукты', '🥛', 2),
@@ -358,3 +637,9 @@ INSERT INTO public.categories (name, emoji, sort_order) VALUES
 ('Бытовая химия', '🧼', 7),
 ('Сладости', '🍫', 8)
 ON CONFLICT DO NOTHING;
+
+INSERT INTO public.feature_flags (name, enabled, description) VALUES
+('ai_parser', TRUE, 'Smart AI receipt and message parser'),
+('smart_reorder', TRUE, 'Predictive shopping replenishment reminders'),
+('realtime_sync', TRUE, 'Realtime Supabase list updates')
+ON CONFLICT (name) DO NOTHING;

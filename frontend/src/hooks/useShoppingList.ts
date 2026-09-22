@@ -1,8 +1,22 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { itemsApi, CreateItemRequest } from '../api/items';
 import { ShoppingItem } from '../types';
+import { subscribeToShoppingItems } from '@/lib/supabase/client';
 
 export function useShoppingItems(listId: string) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!listId) return;
+    const sub = subscribeToShoppingItems(listId, () => {
+      queryClient.invalidateQueries({ queryKey: ['items', listId] });
+    });
+    return () => {
+      sub.unsubscribe();
+    };
+  }, [listId, queryClient]);
+
   return useQuery({
     queryKey: ['items', listId],
     queryFn: () => itemsApi.getByList(listId),

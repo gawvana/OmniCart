@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./omnicart.db"
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
+    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
+
     AI_PROVIDER: str = "groq"
     GROQ_API_KEY: Optional[str] = None
     GROQ_MODEL: str = "llama-3.3-70b-versatile"

@@ -10,6 +10,7 @@ import { LiquidModal } from '@/design-system/components/GlassModal';
 import { GlassInput } from '@/design-system/components/GlassInput';
 import { PrimaryButton, SecondaryButton } from '@/design-system/components/GlassButton';
 import { GlassSkeleton } from '@/design-system/components/GlassSkeleton';
+import { subscribeToFamilyActivity } from '@/lib/supabase/client';
 
 export const FamilyPage: React.FC = () => {
   const { t } = useTranslation();
@@ -54,6 +55,19 @@ export const FamilyPage: React.FC = () => {
   useEffect(() => {
     fetchFamilyData();
   }, []);
+
+  // Supabase Realtime subscription for family activity
+  useEffect(() => {
+    if (!activeFamily?.id) return;
+    const sub = subscribeToFamilyActivity(activeFamily.id, (payload) => {
+      if (payload.new) {
+        setActivities((prev) => [payload.new, ...prev]);
+      }
+    });
+    return () => {
+      sub.unsubscribe();
+    };
+  }, [activeFamily?.id]);
 
   const handleCreateFamily = async (e: React.FormEvent) => {
     e.preventDefault();
