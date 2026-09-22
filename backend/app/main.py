@@ -1,3 +1,12 @@
+import sys
+from pathlib import Path
+
+_backend_dir = str(Path(__file__).resolve().parent.parent)
+if sys.path[0] != _backend_dir:
+    if _backend_dir in sys.path:
+        sys.path.remove(_backend_dir)
+    sys.path.insert(0, _backend_dir)
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware

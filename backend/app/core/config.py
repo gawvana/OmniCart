@@ -23,6 +23,14 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = None
     GEMINI_MODEL: str = "gemini-1.5-flash"
 
+    @property
+    def WEBAPP_URL(self) -> str:
+        return self.TELEGRAM_WEBAPP_URL
+
+    @property
+    def BOT_TOKEN(self) -> str:
+        return self.TELEGRAM_BOT_TOKEN
+
     RATE_LIMIT_PER_MINUTE: int = 60
     AI_RATE_LIMIT_PER_MINUTE: int = 10
 

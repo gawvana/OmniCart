@@ -1,11 +1,13 @@
 from uuid import UUID
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
+from datetime import datetime, timezone
 from app.repositories.user_repository import UserRepository
 from app.repositories.settings_repository import SettingsRepository
+from app.repositories.list_repository import ListRepository
 from app.core.exceptions import NotFoundError
 
 logger = structlog.get_logger(__name__)
@@ -13,6 +15,40 @@ logger = structlog.get_logger(__name__)
 class UserService:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
+
+    async def get_or_create_by_telegram_id(
+        self,
+        telegram_id: Any,
+        username: Optional[str] = None,
+        first_name: Optional[str] = "User",
+        last_name: Optional[str] = None,
+        language_code: Optional[str] = "ru"
+    ) -> Any:
+        user_repo = UserRepository(self.session)
+        try:
+            tg_id_int = int(telegram_id)
+        except (ValueError, TypeError):
+            tg_id_int = 0
+
+        user = await user_repo.get_by_telegram_id(tg_id_int)
+        if not user:
+            user = await user_repo.create(
+                telegram_id=tg_id_int,
+                username=username,
+                first_name=first_name or "User",
+                last_name=last_name,
+                language_code=language_code or "ru",
+                last_seen_at=datetime.now(timezone.utc)
+            )
+            list_repo = ListRepository(self.session)
+            await list_repo.create(
+                owner_id=user.id,
+                name="Мой список",
+                emoji="🛒",
+                color="#3B82F6",
+                is_default=True
+            )
+        return user
 
     async def get_profile(self, user_id: UUID) -> Dict[str, Any]:
         user_repo = UserRepository(self.session)

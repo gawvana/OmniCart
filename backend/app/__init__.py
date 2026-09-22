@@ -1,1 +1,9 @@
-# Init
+import sys
+from pathlib import Path
+
+# Ensure this project's backend directory is always first in sys.path
+_backend_dir = str(Path(__file__).resolve().parent.parent)
+if sys.path[0] != _backend_dir:
+    if _backend_dir in sys.path:
+        sys.path.remove(_backend_dir)
+    sys.path.insert(0, _backend_dir)

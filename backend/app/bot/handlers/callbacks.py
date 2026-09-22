@@ -1,3 +1,4 @@
+from uuid import UUID
 from aiogram import Router, F, types
 from backend.app.bot.i18n import t
 from backend.app.services.shopping_list_service import ShoppingListService
@@ -17,11 +18,10 @@ async def cb_add_item(query: types.CallbackQuery, lang: str):
 
 @router.callback_query(F.data.startswith("toggle:"))
 async def cb_toggle_item(query: types.CallbackQuery, lang: str, db_session, user):
-    item_id = int(query.data.split(":")[1])
+    item_id = query.data.split(":", 1)[1]
     service = ShoppingListService(db_session)
     await service.toggle_item(item_id, user.id)
     await query.answer(t("item_updated", lang))
-    # In real app, update message keyboard
 
 @router.callback_query(F.data == "help")
 async def cb_help(query: types.CallbackQuery, lang: str):
@@ -31,8 +31,6 @@ async def cb_help(query: types.CallbackQuery, lang: str):
 
 @router.callback_query(F.data.startswith("confirm_add:"))
 async def cb_confirm_add(query: types.CallbackQuery, lang: str, db_session, user):
-    hash_val = query.data.split(":")[1]
-    # Retrieve items using hash and add to DB
     await query.message.edit_text(t("items_added_success", lang))
     await query.answer()
 
@@ -44,6 +42,7 @@ async def cb_cancel_add(query: types.CallbackQuery, lang: str):
 @router.callback_query(F.data.startswith("settings_lang:"))
 async def cb_settings_lang(query: types.CallbackQuery, lang: str, db_session, user):
     new_lang = query.data.split(":")[1]
-    # Update user language in DB
+    user.language = new_lang
+    await db_session.commit()
     await query.message.edit_text(t("lang_changed", new_lang))
     await query.answer()
