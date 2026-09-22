@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@tanstack/react-router';
+import { useTelegram } from '@/hooks/useTelegram';
 import { profileApi } from '../api/profile';
 import { ProfileCard } from '../features/profile/ProfileCard';
 import { AppIcon, AppIconName } from '@/design-system/icons/AppIcon';
@@ -11,6 +13,8 @@ export interface ProfilePageProps {
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { user: tgUser } = useTelegram();
   const [profileData, setProfileData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -59,12 +63,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
       ) : (
         <ProfileCard
           name={
-            profileData?.user?.first_name
-              ? `${profileData.user.first_name} ${profileData.user.last_name || ''}`.trim()
-              : 'Пользователь OmniCart'
+            tgUser?.first_name
+              ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim()
+              : (profileData?.user?.first_name
+                  ? `${profileData.user.first_name} ${profileData.user.last_name || ''}`.trim()
+                  : (tgUser?.username || profileData?.user?.username || 'Пользователь'))
           }
-          username={profileData?.user?.username}
-          telegramId={profileData?.user?.telegram_id}
+          username={tgUser?.username || profileData?.user?.username}
+          telegramId={tgUser?.id || profileData?.user?.telegram_id || profileData?.user?.telegram_user_id}
           listsCount={profileData?.stats?.lists_count || 0}
           purchasesCount={profileData?.stats?.purchases_count || 0}
         />
@@ -79,7 +85,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
           {menuItems.map((item) => (
             <div
               key={item.id}
-              onClick={() => onNavigate?.(item.id)}
+              onClick={() => {
+                if (onNavigate) {
+                  onNavigate(item.id);
+                } else {
+                  navigate({ to: `/${item.id}` as any });
+                }
+              }}
               className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-white/[0.03] transition-colors active:scale-[0.99]"
             >
               <div className="flex items-center gap-3">

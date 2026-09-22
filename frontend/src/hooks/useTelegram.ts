@@ -110,11 +110,31 @@ export function useTelegram() {
     }
   };
 
+  let user = webApp?.initDataUnsafe?.user || null;
+  if (!user && webApp?.initData) {
+    try {
+      const sp = new URLSearchParams(webApp.initData);
+      const uStr = sp.get('user');
+      if (uStr) user = JSON.parse(uStr);
+    } catch (e) {}
+  }
+  if (!user && typeof window !== 'undefined' && window.location.hash) {
+    try {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const tgData = hashParams.get('tgWebAppData');
+      if (tgData) {
+        const sp = new URLSearchParams(tgData);
+        const uStr = sp.get('user');
+        if (uStr) user = JSON.parse(uStr);
+      }
+    } catch (e) {}
+  }
+
   return {
     isReady,
     isTelegram,
     webApp,
-    user: webApp?.initDataUnsafe?.user || null,
+    user,
     colorScheme,
     initData: webApp?.initData || '',
     themeParams: webApp?.themeParams || {},
