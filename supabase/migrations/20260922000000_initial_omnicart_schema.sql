@@ -381,11 +381,44 @@ BEGIN
         NULLIF(current_setting('request.jwt.claims', true)::jsonb->>'sub', '')::UUID
     );
 END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+$$ LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path = public;
+
+-- Internal security helper functions (non-recursive, shielded from public RPC)
+CREATE SCHEMA IF NOT EXISTS internal;
+GRANT USAGE ON SCHEMA internal TO authenticated, anon;
+
+CREATE OR REPLACE FUNCTION internal.is_list_owner(_list_id UUID, _user_id UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM shopping_lists WHERE id = _list_id AND owner_id = _user_id);
+$$;
+
+CREATE OR REPLACE FUNCTION internal.is_list_member(_list_id UUID, _user_id UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM shopping_list_members WHERE list_id = _list_id AND user_id = _user_id);
+$$;
+
+CREATE OR REPLACE FUNCTION internal.is_family_member(_family_id UUID, _user_id UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM family_members WHERE family_id = _family_id AND user_id = _user_id AND is_active = true);
+$$;
+
+CREATE OR REPLACE FUNCTION internal.is_family_admin(_family_id UUID, _user_id UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM families f WHERE f.id = _family_id AND f.created_by = _user_id
+  ) OR EXISTS (
+    SELECT 1 FROM family_members m WHERE m.family_id = _family_id AND m.user_id = _user_id AND m.role IN ('owner', 'admin') AND m.is_active = true
+  );
+$$;
+
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA internal TO authenticated;
 
 -- Users policies
 CREATE POLICY users_select ON public.users
     FOR SELECT USING (id = public.current_app_user_id());
+
+CREATE POLICY users_insert ON public.users
+    FOR INSERT WITH CHECK (id = public.current_app_user_id() OR auth.uid()::text IS NOT NULL);
 
 CREATE POLICY users_update ON public.users
     FOR UPDATE USING (id = public.current_app_user_id());
@@ -397,15 +430,9 @@ CREATE POLICY user_settings_select ON public.user_settings
 CREATE POLICY user_settings_all ON public.user_settings
     FOR ALL USING (user_id = public.current_app_user_id());
 
--- Shopping Lists: Owner or Member
+-- Shopping Lists: Owner or Member (non-recursive)
 CREATE POLICY lists_select ON public.shopping_lists
-    FOR SELECT USING (
-        owner_id = public.current_app_user_id() OR
-        EXISTS (
-            SELECT 1 FROM public.shopping_list_members m
-            WHERE m.list_id = shopping_lists.id AND m.user_id = public.current_app_user_id()
-        )
-    );
+    FOR SELECT USING (owner_id = public.current_app_user_id() OR internal.is_list_member(id, public.current_app_user_id()));
 
 CREATE POLICY lists_insert ON public.shopping_lists
     FOR INSERT WITH CHECK (owner_id = public.current_app_user_id());
@@ -422,121 +449,70 @@ CREATE POLICY lists_update ON public.shopping_lists
 CREATE POLICY lists_delete ON public.shopping_lists
     FOR DELETE USING (owner_id = public.current_app_user_id());
 
--- Shopping List Members
+-- Shopping List Members (non-recursive)
 CREATE POLICY list_members_select ON public.shopping_list_members
-    FOR SELECT USING (
-        user_id = public.current_app_user_id() OR
-        EXISTS (
-            SELECT 1 FROM public.shopping_lists l
-            WHERE l.id = shopping_list_members.list_id AND l.owner_id = public.current_app_user_id()
-        )
-    );
+    FOR SELECT USING (user_id = public.current_app_user_id() OR internal.is_list_owner(list_id, public.current_app_user_id()));
 
-CREATE POLICY list_members_modify ON public.shopping_list_members
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.shopping_lists l
-            WHERE l.id = shopping_list_members.list_id AND l.owner_id = public.current_app_user_id()
-        )
-    );
+CREATE POLICY list_members_insert ON public.shopping_list_members
+    FOR INSERT WITH CHECK (internal.is_list_owner(list_id, public.current_app_user_id()));
+
+CREATE POLICY list_members_update ON public.shopping_list_members
+    FOR UPDATE USING (internal.is_list_owner(list_id, public.current_app_user_id()));
+
+CREATE POLICY list_members_delete ON public.shopping_list_members
+    FOR DELETE USING (internal.is_list_owner(list_id, public.current_app_user_id()));
 
 -- Shopping Items: SELECT allowed for list members; MUTATION allowed ONLY for owner/editor (VIEWERS DENIED)
 CREATE POLICY items_select ON public.shopping_items
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.shopping_lists l
-            WHERE l.id = shopping_items.list_id AND (
-                l.owner_id = public.current_app_user_id() OR
-                EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = l.id AND m.user_id = public.current_app_user_id())
-            )
-        )
-    );
+    FOR SELECT USING (internal.is_list_owner(list_id, public.current_app_user_id()) OR internal.is_list_member(list_id, public.current_app_user_id()));
 
 CREATE POLICY items_insert ON public.shopping_items
     FOR INSERT WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.shopping_lists l
-            WHERE l.id = shopping_items.list_id AND (
-                l.owner_id = public.current_app_user_id() OR
-                EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = l.id AND m.user_id = public.current_app_user_id() AND m.role IN ('owner', 'editor'))
-            )
-        )
+        internal.is_list_owner(list_id, public.current_app_user_id()) OR
+        EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = shopping_items.list_id AND m.user_id = public.current_app_user_id() AND m.role IN ('owner', 'editor'))
     );
 
 CREATE POLICY items_update ON public.shopping_items
     FOR UPDATE USING (
-        EXISTS (
-            SELECT 1 FROM public.shopping_lists l
-            WHERE l.id = shopping_items.list_id AND (
-                l.owner_id = public.current_app_user_id() OR
-                EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = l.id AND m.user_id = public.current_app_user_id() AND m.role IN ('owner', 'editor'))
-            )
-        )
+        internal.is_list_owner(list_id, public.current_app_user_id()) OR
+        EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = shopping_items.list_id AND m.user_id = public.current_app_user_id() AND m.role IN ('owner', 'editor'))
     );
 
 CREATE POLICY items_delete ON public.shopping_items
     FOR DELETE USING (
-        EXISTS (
-            SELECT 1 FROM public.shopping_lists l
-            WHERE l.id = shopping_items.list_id AND (
-                l.owner_id = public.current_app_user_id() OR
-                EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = l.id AND m.user_id = public.current_app_user_id() AND m.role IN ('owner', 'editor'))
-            )
-        )
+        internal.is_list_owner(list_id, public.current_app_user_id()) OR
+        EXISTS (SELECT 1 FROM public.shopping_list_members m WHERE m.list_id = shopping_items.list_id AND m.user_id = public.current_app_user_id() AND m.role IN ('owner', 'editor'))
     );
 
 -- Favorites
 CREATE POLICY favorites_all ON public.favorites
     FOR ALL USING (user_id = public.current_app_user_id());
 
--- Families
+-- Families (non-recursive)
 CREATE POLICY families_select ON public.families
-    FOR SELECT USING (
-        created_by = public.current_app_user_id() OR
-        EXISTS (
-            SELECT 1 FROM public.family_members m
-            WHERE m.family_id = families.id AND m.user_id = public.current_app_user_id() AND m.is_active = TRUE
-        )
-    );
+    FOR SELECT USING (created_by = public.current_app_user_id() OR internal.is_family_member(id, public.current_app_user_id()));
 
 CREATE POLICY families_insert ON public.families
     FOR INSERT WITH CHECK (created_by = public.current_app_user_id());
 
 CREATE POLICY families_update ON public.families
-    FOR UPDATE USING (
-        created_by = public.current_app_user_id() OR
-        EXISTS (
-            SELECT 1 FROM public.family_members m
-            WHERE m.family_id = families.id AND m.user_id = public.current_app_user_id() AND m.role IN ('owner', 'admin') AND m.is_active = TRUE
-        )
-    );
+    FOR UPDATE USING (created_by = public.current_app_user_id() OR internal.is_family_admin(id, public.current_app_user_id()));
 
 CREATE POLICY families_delete ON public.families
     FOR DELETE USING (created_by = public.current_app_user_id());
 
--- Family Members
+-- Family Members (non-recursive)
 CREATE POLICY family_members_select ON public.family_members
-    FOR SELECT USING (
-        user_id = public.current_app_user_id() OR
-        EXISTS (
-            SELECT 1 FROM public.families f
-            WHERE f.id = family_members.family_id AND (
-                f.created_by = public.current_app_user_id() OR
-                EXISTS (SELECT 1 FROM public.family_members m2 WHERE m2.family_id = f.id AND m2.user_id = public.current_app_user_id() AND m2.is_active = TRUE)
-            )
-        )
-    );
+    FOR SELECT USING (user_id = public.current_app_user_id() OR internal.is_family_member(family_id, public.current_app_user_id()));
 
-CREATE POLICY family_members_modify ON public.family_members
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.families f
-            WHERE f.id = family_members.family_id AND (
-                f.created_by = public.current_app_user_id() OR
-                EXISTS (SELECT 1 FROM public.family_members m WHERE m.family_id = f.id AND m.user_id = public.current_app_user_id() AND m.role IN ('owner', 'admin'))
-            )
-        )
-    );
+CREATE POLICY family_members_insert ON public.family_members
+    FOR INSERT WITH CHECK (internal.is_family_admin(family_id, public.current_app_user_id()));
+
+CREATE POLICY family_members_update ON public.family_members
+    FOR UPDATE USING (internal.is_family_admin(family_id, public.current_app_user_id()));
+
+CREATE POLICY family_members_delete ON public.family_members
+    FOR DELETE USING (internal.is_family_admin(family_id, public.current_app_user_id()));
 
 -- Family Invites
 CREATE POLICY family_invites_select ON public.family_invites

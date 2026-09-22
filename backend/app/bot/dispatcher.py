@@ -1,7 +1,7 @@
 from aiogram import Dispatcher
-from backend.app.bot.middlewares.auth import DatabaseMiddleware
-from backend.app.bot.middlewares.i18n import I18nMiddleware
-from backend.app.bot.handlers import start, commands, natural_language, callbacks
+from app.bot.middlewares.auth import DatabaseMiddleware
+from app.bot.middlewares.i18n import I18nMiddleware
+from app.bot.handlers import start, commands, natural_language, callbacks
 
 def setup_dispatcher() -> Dispatcher:
     dp = Dispatcher()

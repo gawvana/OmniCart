@@ -1,8 +1,8 @@
 from aiogram import Router, types
 from aiogram.filters import CommandStart
-from backend.app.bot.i18n import t
-from backend.app.bot.keyboards.main import main_menu_keyboard
-from backend.app.core.config import get_settings
+from app.bot.i18n import t
+from app.bot.keyboards.main import main_menu_keyboard
+from app.core.config import get_settings
 
 router = Router()
 

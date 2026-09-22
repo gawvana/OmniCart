@@ -18,11 +18,25 @@ class AuthService:
         Validate Telegram initData, get_or_create user. Return (user, is_new).
         Auto-create default shopping list for new users. Update last_seen_at.
         """
-        # Validate init_data (assumes signature validation is done or delegated)
+        # Validate init_data
         parsed_data = dict(urllib.parse.parse_qsl(init_data))
         if "user" not in parsed_data:
             raise AuthorizationError("Invalid Telegram init_data: missing user")
             
+        from app.core.config import get_settings
+        from app.core.security import validate_telegram_init_data
+        settings = get_settings()
+
+        # If hash is present and bot token configured, verify signature
+        if "hash" in parsed_data and getattr(settings, "TELEGRAM_BOT_TOKEN", None):
+            try:
+                validate_telegram_init_data(init_data, settings.TELEGRAM_BOT_TOKEN)
+            except Exception as e:
+                # In strict production mode, fail on signature mismatch
+                if getattr(settings, "APP_ENV", "production") == "production":
+                    raise AuthorizationError(f"Telegram signature verification failed: {str(e)}")
+                logger.warning("Telegram signature verification failed (dev mode allowed)", error=str(e))
+
         try:
             tg_user = json.loads(parsed_data["user"])
         except json.JSONDecodeError:

@@ -1,8 +1,8 @@
 import asyncio
 import logging
-from backend.app.bot.bot import create_bot
-from backend.app.bot.dispatcher import setup_dispatcher
-from backend.app.core.database import init_db
+from app.bot.bot import create_bot
+from app.bot.dispatcher import setup_dispatcher
+from app.core.database import init_db
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

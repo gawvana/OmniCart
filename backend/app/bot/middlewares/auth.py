@@ -1,8 +1,8 @@
 from typing import Any, Awaitable, Callable, Dict
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, User
-from backend.app.core.database import get_db_session
-from backend.app.services.user_service import UserService
+from app.core.database import get_db_session
+from app.services.user_service import UserService
 
 class DatabaseMiddleware(BaseMiddleware):
     async def __call__(

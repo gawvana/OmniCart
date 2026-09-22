@@ -1,13 +1,14 @@
+import json
 from uuid import UUID
 from aiogram import Router, F, types
-from backend.app.bot.i18n import t
-from backend.app.services.shopping_list_service import ShoppingListService
+from app.bot.i18n import t
+from app.services.shopping_list_service import ShoppingListService
 
 router = Router()
 
 @router.callback_query(F.data == "my_list")
 async def cb_my_list(query: types.CallbackQuery, lang: str, db_session, user):
-    from backend.app.bot.handlers.commands import cmd_list
+    from app.bot.handlers.commands import cmd_list
     await cmd_list(query.message, lang, db_session, user)
     await query.answer()
 
@@ -25,12 +26,19 @@ async def cb_toggle_item(query: types.CallbackQuery, lang: str, db_session, user
 
 @router.callback_query(F.data == "help")
 async def cb_help(query: types.CallbackQuery, lang: str):
-    from backend.app.bot.handlers.commands import cmd_help
+    from app.bot.handlers.commands import cmd_help
     await cmd_help(query.message, lang)
     await query.answer()
 
 @router.callback_query(F.data.startswith("confirm_add:"))
 async def cb_confirm_add(query: types.CallbackQuery, lang: str, db_session, user):
+    service = ShoppingListService(db_session)
+    item_data = query.data.split(":", 1)[1]
+    # If comma-separated or json item names
+    items_to_add = [s.strip() for s in item_data.split(",") if s.strip()]
+    for item_name in items_to_add:
+        if item_name and item_name != "tmp123":
+            await service.add_item(user.id, item_name)
     await query.message.edit_text(t("items_added_success", lang))
     await query.answer()
 

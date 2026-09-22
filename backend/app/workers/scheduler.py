@@ -1,8 +1,8 @@
 import asyncio
 from arq import create_pool, cron
 from arq.connections import RedisSettings
-from backend.app.core.config import get_settings
-from backend.app.workers.tasks import (
+from app.core.config import get_settings
+from app.workers.tasks import (
     process_reminders,
     process_recurring_items,
     calculate_smart_reorders,
@@ -14,7 +14,7 @@ from backend.app.workers.tasks import (
 
 async def startup(ctx):
     """Initialize database session factory for worker."""
-    from backend.app.db.engine import async_session_factory
+    from app.db.engine import async_session_factory
     ctx['session_factory'] = async_session_factory
 
 async def shutdown(ctx):

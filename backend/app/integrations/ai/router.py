@@ -19,8 +19,8 @@ class AIRouter:
         self.settings = settings
         self.primary_provider: AIProvider | None = None
         self.fallback_provider: AIProvider | None = None
-    
-    async def initialize(self) -> None:
+        
+        # Synchronously initialize providers
         if hasattr(self.settings, 'GROQ_API_KEY') and self.settings.GROQ_API_KEY:
             self.primary_provider = GroqProvider(api_key=self.settings.GROQ_API_KEY)
         
@@ -31,11 +31,14 @@ class AIRouter:
             self.primary_provider = self.fallback_provider
             self.fallback_provider = None
     
+    async def initialize(self) -> None:
+        pass
+    
     def get_model_for_operation(self, operation: AIOperation) -> str:
         simple_ops = {AIOperation.PARSE_ITEMS, AIOperation.CATEGORIZE, AIOperation.PARSE_REMINDER}
         if operation in simple_ops:
-            return getattr(self.settings, 'GROQ_FAST_MODEL', 'llama-3.1-8b-instant')
-        return getattr(self.settings, 'GROQ_MODEL', 'llama-3.3-70b-versatile')
+            return getattr(self.settings, 'GROQ_FAST_MODEL', 'openai/gpt-oss-20b')
+        return getattr(self.settings, 'GROQ_MODEL', 'openai/gpt-oss-20b')
     
     async def execute(self, operation: AIOperation, messages: list[dict], schema: dict | None = None) -> AIResponse:
         model = self.get_model_for_operation(operation)

@@ -1,18 +1,15 @@
+/**
+ * Realtime synchronization is natively provided by Supabase Realtime Channels.
+ * @see frontend/src/lib/supabase/client.ts
+ */
 export class WebSocketClient {
-  private ws: WebSocket | null = null;
-
-  connect(familyId: string) {
-    this.ws = new WebSocket(`ws://api/ws/family/${familyId}`);
-    this.ws.onmessage = (event) => {
-      console.log('WS Message:', event.data);
-    };
+  connect(_familyId: string): void {
+    // No-op: Supabase Realtime manages websocket connections automatically
   }
 
-  disconnect() {
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
+  disconnect(): void {
+    // No-op
   }
 }
+
 export const wsClient = new WebSocketClient();

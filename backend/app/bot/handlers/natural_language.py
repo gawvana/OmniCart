@@ -1,9 +1,11 @@
+import re
+import logging
 from aiogram import Router, types
 from aiogram.filters import Filter
-from backend.app.bot.i18n import t
-from backend.app.services.ai_service import AIService
-from backend.app.bot.keyboards.main import confirm_add_keyboard
-import logging
+from app.bot.i18n import t
+from app.bot.keyboards.main import confirm_add_keyboard
+from app.core.config import get_settings
+from app.services.shopping_list_service import ShoppingListService
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -17,33 +19,42 @@ class NaturalLanguageFilter(Filter):
 @router.message(NaturalLanguageFilter())
 async def handle_natural_language(message: types.Message, lang: str, db_session, user):
     try:
-        if "бюджет" in message.text.lower() or "budget" in message.text.lower():
+        raw_text = message.text.strip()
+        lower_text = raw_text.lower()
+        
+        if "бюджет" in lower_text or "budget" in lower_text:
             await message.answer(t("budget_set", lang))
             return
             
-        if "напомни" in message.text.lower() or "remind" in message.text.lower():
+        if "напомни" in lower_text or "remind" in lower_text:
             await message.answer(t("reminder_created", lang))
             return
             
-        if "план" in message.text.lower() or "plan" in message.text.lower():
+        if "план" in lower_text or "plan" in lower_text:
             await message.answer(t("ai_planning", lang))
             return
 
-        ai_service = AIService()
-        parsed_items = await ai_service.parse_shopping_items(message.text)
-        
-        if not parsed_items:
+        # Parse grocery items (smart natural language)
+        items_list = []
+        lines = [line.strip() for line in re.split(r'[\n,;]+', raw_text) if line.strip()]
+        for line in lines:
+            cleaned = re.sub(r'^(добавь|купи|купить|надо|возьми)\s+', '', line, flags=re.IGNORECASE).strip()
+            if cleaned:
+                items_list.append({"name": cleaned, "quantity": 1})
+
+        if not items_list:
             await message.answer(t("ai_error", lang))
             return
             
         text = t("ai_parsing_success", lang) + "\n\n"
-        for item in parsed_items:
-            text += f"• {item.get('name', '')} - {item.get('quantity', '')}\n"
+        names_for_callback = []
+        for item in items_list:
+            text += f"• {item.get('name', '')}\n"
+            names_for_callback.append(item.get('name', ''))
             
-        # Store temporary parsing result in redis/db with hash in real app
-        fake_hash = "tmp123" 
-        await message.answer(text, reply_markup=confirm_add_keyboard(fake_hash, lang))
+        callback_payload = ",".join(names_for_callback)[:60]
+        await message.answer(text, reply_markup=confirm_add_keyboard(callback_payload, lang))
         
     except Exception as e:
-        logger.error(f"AI parsing error: {e}")
+        logger.error(f"Natural language processing error: {e}")
         await message.answer(t("ai_error", lang))

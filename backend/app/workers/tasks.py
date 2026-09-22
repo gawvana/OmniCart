@@ -8,8 +8,8 @@ async def process_reminders(ctx):
     """Check for due reminders and send notifications."""
     session_factory = ctx['session_factory']
     async with session_factory() as session:
-        from backend.app.services.reminder_service import ReminderService
-        from backend.app.services.notification_service import NotificationService
+        from app.services.reminder_service import ReminderService
+        from app.services.notification_service import NotificationService
         
         reminder_svc = ReminderService(session)
         notification_svc = NotificationService(session)
@@ -32,8 +32,8 @@ async def process_recurring_items(ctx):
     """Check for due recurring items and create suggestions."""
     session_factory = ctx['session_factory']
     async with session_factory() as session:
-        from backend.app.models.recurring import RecurringItem
-        from backend.app.services.notification_service import NotificationService
+        from app.models.recurring import RecurringItem
+        from app.services.notification_service import NotificationService
         
         now = datetime.now(timezone.utc)
         result = await session.execute(
@@ -63,8 +63,8 @@ async def calculate_smart_reorders(ctx):
     """Analyze purchase history and create smart reorder suggestions."""
     session_factory = ctx['session_factory']
     async with session_factory() as session:
-        from backend.app.models.user import User
-        from backend.app.services.reorder_service import ReorderService
+        from app.models.user import User
+        from app.services.reorder_service import ReorderService
         
         # Get all active users
         result = await session.execute(
@@ -85,9 +85,9 @@ async def send_notifications(ctx):
     """Process pending notifications and send via Telegram."""
     session_factory = ctx['session_factory']
     async with session_factory() as session:
-        from backend.app.models.activity import Notification
-        from backend.app.models.user import User
-        from backend.app.bot.bot import create_bot
+        from app.models.activity import Notification
+        from app.models.user import User
+        from app.bot.bot import create_bot
         
         # Find unread notifications created in the last hour
         cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
@@ -128,10 +128,10 @@ async def generate_daily_digest(ctx):
     """Generate daily summary for users who have it enabled."""
     session_factory = ctx['session_factory']
     async with session_factory() as session:
-        from backend.app.models.user import User, UserSettings
-        from backend.app.services.analytics_service import AnalyticsService
-        from backend.app.services.notification_service import NotificationService
-        from backend.app.models.shopping import ShoppingItem
+        from app.models.user import User, UserSettings
+        from app.services.analytics_service import AnalyticsService
+        from app.services.notification_service import NotificationService
+        from app.models.shopping import ShoppingItem
         from sqlalchemy import func
         
         # Get users with notifications enabled
@@ -179,8 +179,8 @@ async def aggregate_prices(ctx):
     """Aggregate price observations into statistics."""
     session_factory = ctx['session_factory']
     async with session_factory() as session:
-        from backend.app.models.price import PriceObservation
-        from backend.app.models.product import Product
+        from app.models.price import PriceObservation
+        from app.models.product import Product
         from sqlalchemy import func, and_
         
         # Get products with recent observations
@@ -204,8 +204,8 @@ async def cleanup_expired(ctx):
     """Clean up expired invites and soft-deleted accounts."""
     session_factory = ctx['session_factory']
     async with session_factory() as session:
-        from backend.app.models.family import FamilyInvite
-        from backend.app.models.user import User
+        from app.models.family import FamilyInvite
+        from app.models.user import User
         
         now = datetime.now(timezone.utc)
         

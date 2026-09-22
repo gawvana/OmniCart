@@ -1,9 +1,9 @@
 from aiogram import Router, types
 from aiogram.filters import Command
-from backend.app.bot.i18n import t
-from backend.app.bot.keyboards.main import list_keyboard, help_keyboard, settings_keyboard
-from backend.app.services.shopping_list_service import ShoppingListService
-from backend.app.core.config import get_settings
+from app.bot.i18n import t
+from app.bot.keyboards.main import list_keyboard, help_keyboard, settings_keyboard
+from app.services.shopping_list_service import ShoppingListService
+from app.core.config import get_settings
 
 router = Router()
 
@@ -44,23 +44,61 @@ async def cmd_settings(message: types.Message, lang: str):
     await message.answer(t("settings", lang), reply_markup=settings_keyboard(lang))
 
 @router.message(Command("history"))
-async def cmd_history(message: types.Message, lang: str):
-    await message.answer(t("history_empty", lang))
+async def cmd_history(message: types.Message, lang: str, db_session, user):
+    from app.services.history_service import HistoryService
+    service = HistoryService(db_session)
+    history = await service.get_user_history(user.id, limit=5)
+    if not history:
+        await message.answer(t("history_empty", lang))
+        return
+    text = f"📜 {t('btn_my_list', lang)}:\n\n"
+    for item in history:
+        text += f"• {item.item_name} - {item.quantity} {item.unit}\n"
+    await message.answer(text)
 
 @router.message(Command("favorites"))
-async def cmd_favorites(message: types.Message, lang: str):
-    await message.answer(t("favorites_empty", lang))
+async def cmd_favorites(message: types.Message, lang: str, db_session, user):
+    from app.services.product_service import ProductService
+    service = ProductService(db_session)
+    favs = await service.get_user_favorites(user.id)
+    if not favs:
+        await message.answer(t("favorites_empty", lang))
+        return
+    text = "⭐ Избранное:\n\n"
+    for f in favs:
+        prod_name = f.product.name if f.product else "Продукт"
+        text += f"• {prod_name}\n"
+    await message.answer(text)
 
 @router.message(Command("analytics"))
-async def cmd_analytics(message: types.Message, lang: str):
-    await message.answer(t("analytics_empty", lang))
+async def cmd_analytics(message: types.Message, lang: str, db_session, user):
+    from app.services.analytics_service import AnalyticsService
+    service = AnalyticsService(db_session)
+    stats = await service.get_user_analytics(user.id)
+    total_spent = stats.get("total_spent", 0)
+    total_purchases = stats.get("total_purchases", 0)
+    text = f"📊 Аналитика:\n\n• Покупок: {total_purchases}\n• Потрачено: {total_spent:.2f} UZS"
+    await message.answer(text)
 
 @router.message(Command("profile"))
-async def cmd_profile(message: types.Message, lang: str):
-    await message.answer(t("profile_empty", lang))
+async def cmd_profile(message: types.Message, lang: str, db_session, user):
+    from app.services.user_service import UserService
+    service = UserService(db_session)
+    profile = await service.get_profile(user.id)
+    name = f"{profile.get('first_name', '')} {profile.get('last_name', '')}".strip()
+    text = f"👤 Профиль:\n\n• Имя: {name}\n• ID: {user.telegram_user_id}\n• Язык: {user.language}"
+    await message.answer(text)
 
 @router.message(Command("family"))
-async def cmd_family(message: types.Message, lang: str):
+async def cmd_family(message: types.Message, lang: str, db_session, user):
+    from app.services.family_service import FamilyService
     bot_info = await message.bot.get_me()
-    invite_link = f"https://t.me/{bot_info.username}?start=cart_{user.family_id}"
-    await message.answer(t("family_invite", lang, link=invite_link))
+    service = FamilyService(db_session)
+    family = await service.get_user_family(user.id)
+    if family:
+        invite_link = f"https://t.me/{bot_info.username}?start=fam_{family.id}"
+        await message.answer(t("family_invite", lang, link=invite_link))
+    else:
+        new_fam = await service.create_family(user.id, f"Семья {user.first_name}")
+        invite_link = f"https://t.me/{bot_info.username}?start=fam_{new_fam.id}"
+        await message.answer(t("family_invite", lang, link=invite_link))
