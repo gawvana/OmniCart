@@ -1,0 +1,1 @@
+from fastapi import APIRouter, Depends\nfrom app.api.deps import get_current_user\n\nrouter = APIRouter()\n\n@router.get("/")\nasync def get_root(current_user = Depends(get_current_user)):\n    return {"data": "Not implemented"}\n\n@router.get("/{product_id}")\nasync def get_product_id(current_user = Depends(get_current_user)):\n    return {"data": "Not implemented"}\n\n

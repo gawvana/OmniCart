@@ -1,0 +1,1 @@
+from fastapi import APIRouter, Depends\nfrom app.api.deps import get_current_user\n\nrouter = APIRouter()\n\n@router.get("/categories")\nasync def get_categories(current_user = Depends(get_current_user)):\n    return {"data": "Not implemented"}\n\n@router.get("/search")\nasync def get_search(current_user = Depends(get_current_user)):\n    return {"data": "Not implemented"}\n\n

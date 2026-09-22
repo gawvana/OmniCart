@@ -1,0 +1,138 @@
+{
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "retry": "Повторить",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "delete": "Удалить",
+    "confirm": "Подтвердить",
+    "back": "Назад",
+    "close": "Закрыть",
+    "search": "Поиск",
+    "noResults": "Ничего не найдено",
+    "offline": "Нет сети",
+    "syncing": "Синхронизация..."
+  },
+  "home": {
+    "greeting": "Привет",
+    "subtitle": "Что купим сегодня?",
+    "quickInput": "Быстрый ввод...",
+    "quickActions": "Быстрые действия",
+    "addItem": "Добавить товар",
+    "aiPlan": "AI План покупок",
+    "budget": "Бюджет",
+    "frequentItems": "Частые товары"
+  },
+  "shopping": {
+    "title": "Покупки",
+    "addPlaceholder": "Добавить товар...",
+    "storeMode": "Режим магазина",
+    "emptyState": "Список покупок пуст",
+    "itemAdded": "Товар добавлен",
+    "itemDeleted": "Товар удален",
+    "markPurchased": "Отметить купленным",
+    "categories": "Категории"
+  },
+  "lists": {
+    "title": "Списки",
+    "createList": "Создать список",
+    "defaultList": "Основной список",
+    "archived": "Архив",
+    "noLists": "У вас пока нет списков"
+  },
+  "history": {
+    "title": "История",
+    "today": "Сегодня",
+    "yesterday": "Вчера",
+    "lastWeek": "На прошлой неделе",
+    "filters": "Фильтры",
+    "noHistory": "История покупок пуста"
+  },
+  "analytics": {
+    "title": "Аналитика",
+    "thisMonth": "В этом месяце",
+    "spent": "Потрачено",
+    "purchases": "Покупок",
+    "average": "Средний чек",
+    "byCategory": "По категориям",
+    "byDay": "По дням",
+    "trends": "Тренды"
+  },
+  "family": {
+    "title": "Семья",
+    "members": "Участники",
+    "invite": "Пригласить",
+    "activity": "Активность",
+    "createFamily": "Создать семью",
+    "joinFamily": "Присоединиться",
+    "roles": {
+      "owner": "Владелец",
+      "admin": "Админ",
+      "member": "Участник",
+      "viewer": "Наблюдатель"
+    },
+    "noFamily": "Вы пока не состоите в семье"
+  },
+  "profile": {
+    "title": "Профиль",
+    "purchases": "Покупок",
+    "lists": "Списков",
+    "spent": "Потрачено",
+    "members": "Участники",
+    "favorites": "Избранное",
+    "history": "История",
+    "analytics": "Аналитика",
+    "family": "Семья",
+    "notifications": "Уведомления",
+    "settings": "Настройки",
+    "privacy": "Приватность"
+  },
+  "settings": {
+    "title": "Настройки",
+    "language": "Язык",
+    "currency": "Валюта",
+    "city": "Город",
+    "theme": "Тема оформления",
+    "notifications": "Уведомления",
+    "ai": "Настройки AI",
+    "privacy": "Приватность",
+    "dataExport": "Экспорт данных",
+    "deleteAccount": "Удалить аккаунт"
+  },
+  "budget": {
+    "title": "Бюджет",
+    "limit": "Лимит",
+    "remaining": "Осталось",
+    "exceeded": "Превышен",
+    "suggestions": "Советы AI"
+  },
+  "recurring": {
+    "title": "Регулярные покупки",
+    "interval": "Интервал",
+    "nextDue": "Следующая покупка",
+    "enable": "Включить",
+    "disable": "Выключить"
+  },
+  "ai": {
+    "parsing": "Анализ текста...",
+    "planning": "Создание плана...",
+    "analyzing": "Анализируем цены...",
+    "errorFallback": "Не удалось обработать запрос AI"
+  },
+  "onboarding": {
+    "welcome": "Добро пожаловать в OmniCart",
+    "subtitle": "Умный помощник для ваших покупок",
+    "selectLanguage": "Выберите язык",
+    "selectCity": "Выберите город",
+    "selectCurrency": "Выберите валюту",
+    "getStarted": "Начать"
+  },
+  "errors": {
+    "network": "Ошибка сети. Проверьте подключение.",
+    "server": "Внутренняя ошибка сервера",
+    "notFound": "Страница не найдена",
+    "unauthorized": "Требуется авторизация",
+    "rateLimited": "Слишком много запросов. Подождите немного."
+  }
+}

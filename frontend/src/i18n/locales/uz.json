@@ -1,0 +1,138 @@
+{
+  "common": {
+    "loading": "Yuklanmoqda...",
+    "error": "Xato",
+    "retry": "Takrorlash",
+    "cancel": "Bekor qilish",
+    "save": "Saqlash",
+    "delete": "O'chirish",
+    "confirm": "Tasdiqlash",
+    "back": "Orqaga",
+    "close": "Yopish",
+    "search": "Qidiruv",
+    "noResults": "Hech narsa topilmadi",
+    "offline": "Tarmoq yo'q",
+    "syncing": "Sinxronizatsiya..."
+  },
+  "home": {
+    "greeting": "Salom",
+    "subtitle": "Bugun nima xarid qilamiz?",
+    "quickInput": "Tez kiritish...",
+    "quickActions": "Tezkor harakatlar",
+    "addItem": "Mahsulot qo'shish",
+    "aiPlan": "AI Xaridlar rejasi",
+    "budget": "Budjet",
+    "frequentItems": "Tez-tez olinadigan"
+  },
+  "shopping": {
+    "title": "Xaridlar",
+    "addPlaceholder": "Mahsulot qo'shish...",
+    "storeMode": "Do'kon rejimi",
+    "emptyState": "Xaridlar ro'yxati bo'sh",
+    "itemAdded": "Mahsulot qo'shildi",
+    "itemDeleted": "Mahsulot o'chirildi",
+    "markPurchased": "Sotib olingan deb belgilash",
+    "categories": "Kategoriyalar"
+  },
+  "lists": {
+    "title": "Ro'yxatlar",
+    "createList": "Ro'yxat yaratish",
+    "defaultList": "Asosiy ro'yxat",
+    "archived": "Arxiv",
+    "noLists": "Sizda hozircha ro'yxatlar yo'q"
+  },
+  "history": {
+    "title": "Tarix",
+    "today": "Bugun",
+    "yesterday": "Kecha",
+    "lastWeek": "O'tgan haftada",
+    "filters": "Filtrlar",
+    "noHistory": "Xaridlar tarixi bo'sh"
+  },
+  "analytics": {
+    "title": "Analitika",
+    "thisMonth": "Bu oyda",
+    "spent": "Sarflangan",
+    "purchases": "Xaridlar",
+    "average": "O'rtacha chek",
+    "byCategory": "Kategoriyalar bo'yicha",
+    "byDay": "Kunlar bo'yicha",
+    "trends": "Trendlar"
+  },
+  "family": {
+    "title": "Oila",
+    "members": "A'zolar",
+    "invite": "Taklif qilish",
+    "activity": "Faollik",
+    "createFamily": "Oila yaratish",
+    "joinFamily": "Qo'shilish",
+    "roles": {
+      "owner": "Egasi",
+      "admin": "Admin",
+      "member": "A'zo",
+      "viewer": "Kuzatuvchi"
+    },
+    "noFamily": "Siz hozircha oila a'zosi emassiz"
+  },
+  "profile": {
+    "title": "Profil",
+    "purchases": "Xaridlar",
+    "lists": "Ro'yxatlar",
+    "spent": "Sarflangan",
+    "members": "A'zolar",
+    "favorites": "Tanlanganlar",
+    "history": "Tarix",
+    "analytics": "Analitika",
+    "family": "Oila",
+    "notifications": "Bildirishnomalar",
+    "settings": "Sozlamalar",
+    "privacy": "Maxfiylik"
+  },
+  "settings": {
+    "title": "Sozlamalar",
+    "language": "Til",
+    "currency": "Valyuta",
+    "city": "Shahar",
+    "theme": "Mavzu",
+    "notifications": "Bildirishnomalar",
+    "ai": "AI sozlamalari",
+    "privacy": "Maxfiylik",
+    "dataExport": "Ma'lumotlarni eksport qilish",
+    "deleteAccount": "Hisobni o'chirish"
+  },
+  "budget": {
+    "title": "Budjet",
+    "limit": "Limit",
+    "remaining": "Qoldi",
+    "exceeded": "Oshib ketdi",
+    "suggestions": "AI maslahatlari"
+  },
+  "recurring": {
+    "title": "Doimiy xaridlar",
+    "interval": "Interval",
+    "nextDue": "Keyingi xarid",
+    "enable": "Yoqish",
+    "disable": "O'chirish"
+  },
+  "ai": {
+    "parsing": "Matnni tahlil qilish...",
+    "planning": "Reja yaratilmoqda...",
+    "analyzing": "Narxlar tahlil qilinmoqda...",
+    "errorFallback": "AI so'rovini qayta ishlash imkonsiz"
+  },
+  "onboarding": {
+    "welcome": "OmniCart-ga xush kelibsiz",
+    "subtitle": "Xaridlaringiz uchun aqlli yordamchi",
+    "selectLanguage": "Tilni tanlang",
+    "selectCity": "Shaharni tanlang",
+    "selectCurrency": "Valyutani tanlang",
+    "getStarted": "Boshlash"
+  },
+  "errors": {
+    "network": "Tarmoq xatosi. Ulanishni tekshiring.",
+    "server": "Ichki server xatosi",
+    "notFound": "Sahifa topilmadi",
+    "unauthorized": "Avtorizatsiya talab qilinadi",
+    "rateLimited": "Juda ko'p so'rovlar. Biroz kuting."
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "back": "Back",
+    "close": "Close",
+    "search": "Search",
+    "noResults": "No results found",
+    "offline": "Offline",
+    "syncing": "Syncing..."
+  },
+  "home": {
+    "greeting": "Hello",
+    "subtitle": "What are we buying today?",
+    "quickInput": "Quick input...",
+    "quickActions": "Quick actions",
+    "addItem": "Add item",
+    "aiPlan": "AI Shopping Plan",
+    "budget": "Budget",
+    "frequentItems": "Frequent items"
+  },
+  "shopping": {
+    "title": "Shopping",
+    "addPlaceholder": "Add item...",
+    "storeMode": "Store mode",
+    "emptyState": "Shopping list is empty",
+    "itemAdded": "Item added",
+    "itemDeleted": "Item deleted",
+    "markPurchased": "Mark purchased",
+    "categories": "Categories"
+  },
+  "lists": {
+    "title": "Lists",
+    "createList": "Create list",
+    "defaultList": "Default list",
+    "archived": "Archived",
+    "noLists": "You don't have any lists yet"
+  },
+  "history": {
+    "title": "History",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "lastWeek": "Last week",
+    "filters": "Filters",
+    "noHistory": "Purchase history is empty"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "thisMonth": "This month",
+    "spent": "Spent",
+    "purchases": "Purchases",
+    "average": "Average check",
+    "byCategory": "By category",
+    "byDay": "By day",
+    "trends": "Trends"
+  },
+  "family": {
+    "title": "Family",
+    "members": "Members",
+    "invite": "Invite",
+    "activity": "Activity",
+    "createFamily": "Create family",
+    "joinFamily": "Join family",
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member",
+      "viewer": "Viewer"
+    },
+    "noFamily": "You are not in a family yet"
+  },
+  "profile": {
+    "title": "Profile",
+    "purchases": "Purchases",
+    "lists": "Lists",
+    "spent": "Spent",
+    "members": "Members",
+    "favorites": "Favorites",
+    "history": "History",
+    "analytics": "Analytics",
+    "family": "Family",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "privacy": "Privacy"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "currency": "Currency",
+    "city": "City",
+    "theme": "Theme",
+    "notifications": "Notifications",
+    "ai": "AI Settings",
+    "privacy": "Privacy",
+    "dataExport": "Export data",
+    "deleteAccount": "Delete account"
+  },
+  "budget": {
+    "title": "Budget",
+    "limit": "Limit",
+    "remaining": "Remaining",
+    "exceeded": "Exceeded",
+    "suggestions": "AI Suggestions"
+  },
+  "recurring": {
+    "title": "Recurring Items",
+    "interval": "Interval",
+    "nextDue": "Next due",
+    "enable": "Enable",
+    "disable": "Disable"
+  },
+  "ai": {
+    "parsing": "Parsing text...",
+    "planning": "Creating plan...",
+    "analyzing": "Analyzing prices...",
+    "errorFallback": "Failed to process AI request"
+  },
+  "onboarding": {
+    "welcome": "Welcome to OmniCart",
+    "subtitle": "Smart assistant for your shopping",
+    "selectLanguage": "Select language",
+    "selectCity": "Select city",
+    "selectCurrency": "Select currency",
+    "getStarted": "Get Started"
+  },
+  "errors": {
+    "network": "Network error. Check connection.",
+    "server": "Internal server error",
+    "notFound": "Page not found",
+    "unauthorized": "Authorization required",
+    "rateLimited": "Too many requests. Please wait."
+  }
+}
