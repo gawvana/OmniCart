@@ -33,6 +33,7 @@ export async function apiClient<T>(endpoint: string, options: ApiClientOptions =
   const { body, params, ...customConfig } = options;
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   let url = cleanEndpoint.startsWith('/api/v1') ? cleanEndpoint : `${BASE_URL}${cleanEndpoint}`;
+  url = url.replace(/\/+$/, '');
   
   if (params) {
     const searchParams = new URLSearchParams();

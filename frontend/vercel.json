@@ -4,7 +4,8 @@
   "installCommand": "npm install",
   "framework": "vite",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://omnicart-backend.onrender.com/api/:path*" },
+    { "source": "/api/v1/:path*", "destination": "https://dolmdxbunpfurqrkgxsy.supabase.co/functions/v1/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://dolmdxbunpfurqrkgxsy.supabase.co/functions/v1/api/:path*" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [

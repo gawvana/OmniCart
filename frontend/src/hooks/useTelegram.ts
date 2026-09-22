@@ -12,7 +12,16 @@ export function useTelegram() {
   };
 
   const webApp = getWebApp();
-  const isTelegram = Boolean(webApp && (webApp.initData?.length > 0 || webApp.initDataUnsafe?.user));
+  const isTelegram = Boolean(
+    webApp && (
+      (webApp.initData && webApp.initData.length > 0) ||
+      webApp.initDataUnsafe?.user ||
+      (typeof window !== 'undefined' && (
+        window.location.hash.includes('tgWebAppData') ||
+        Boolean((window as any).TelegramWebviewProxy)
+      ))
+    )
+  );
 
   useEffect(() => {
     try {

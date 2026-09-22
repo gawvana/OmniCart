@@ -1,14 +1,11 @@
 import React from 'react';
 import { createRootRoute, createRoute, createRouter, Outlet, useNavigate, useLocation } from '@tanstack/react-router';
-import { AnimatedBackground, GlassTabBar, ToastContainer, AppIcon, GlassCard, GlassButton } from '@/design-system';
-import { useTelegram } from '@/hooks/useTelegram';
+import { AnimatedBackground, GlassTabBar, ToastContainer, AppIcon } from '@/design-system';
 
 const RootComponent = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
-  const { isTelegram } = useTelegram();
-  const [bypassGate, setBypassGate] = React.useState(false);
 
   const tabs = [
     { label: 'Home', path: '/', icon: <AppIcon name="home" size={20} /> },
@@ -20,40 +17,6 @@ const RootComponent = () => {
 
   const activeIndex = tabs.findIndex(t => t.path === currentPath || (t.path === '/shopping' && currentPath.startsWith('/shopping')));
   const showTabs = ['/', '/shopping', '/lists', '/profile', '/analytics'].includes(currentPath) || currentPath.startsWith('/shopping/');
-
-  // Route guard: Prompt user to open via Telegram if accessed directly in normal browser
-  if (!isTelegram && !bypassGate && !import.meta.env.DEV) {
-    return (
-      <div className="min-h-screen w-full flex items-center justify-center p-4 bg-slate-950 text-white">
-        <AnimatedBackground />
-        <GlassCard className="max-w-md w-full p-6 text-center z-10 flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-3xl mb-2">
-            🛒
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight">OmniCart AI 2.0</h1>
-          <p className="text-slate-400 text-sm leading-relaxed">
-            OmniCart is optimized as a Telegram Mini App with cloud sync, voice parsing, and family shopping features.
-          </p>
-          <a
-            href="https://t.me/OmniCartV2_bot"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full"
-          >
-            <GlassButton variant="primary" className="w-full py-3">
-              Open in Telegram
-            </GlassButton>
-          </a>
-          <button
-            onClick={() => setBypassGate(true)}
-            className="text-xs text-slate-500 hover:text-slate-300 underline mt-2"
-          >
-            Continue in Web Preview
-          </button>
-        </GlassCard>
-      </div>
-    );
-  }
 
   return (
     <>
