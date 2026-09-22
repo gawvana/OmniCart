@@ -23,26 +23,39 @@ export const MemberList: React.FC<MemberListProps> = ({
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'owner':
-        return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">Владелец</span>;
+        return (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+            Владелец
+          </span>
+        );
       case 'admin':
-        return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">Админ</span>;
+      case 'editor':
+        return (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/15">
+            Редактор
+          </span>
+        );
       default:
-        return <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">Участник</span>;
+        return (
+          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/[0.05] text-slate-400">
+            Участник
+          </span>
+        );
     }
   };
 
   return (
-    <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60 rounded-2xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-white/20 dark:border-zinc-800 p-2">
+    <div className="divide-y divide-white/[0.04] rounded-2xl liquid-glass-subtle border border-white/[0.06] p-1.5">
       {members.map((m) => (
         <div key={m.id} className="p-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-white/[0.08] border border-white/15 flex items-center justify-center text-xs font-semibold text-white shadow-inner">
               {m.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="text-xs font-semibold text-zinc-900 dark:text-white flex items-center gap-1.5">
+              <p className="text-xs font-medium text-white flex items-center gap-1.5 tracking-tight">
                 {m.name}
-                {m.isCurrentUser && <span className="text-[10px] text-zinc-400">(Вы)</span>}
+                {m.isCurrentUser && <span className="text-[10px] text-slate-400">(Вы)</span>}
               </p>
             </div>
           </div>
@@ -51,8 +64,9 @@ export const MemberList: React.FC<MemberListProps> = ({
             {getRoleBadge(m.role)}
             {canManage && !m.isCurrentUser && m.role !== 'owner' && onRemove && (
               <button
+                type="button"
                 onClick={() => onRemove(m.id)}
-                className="p-1 rounded text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+                className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/15 transition-all"
               >
                 <AppIcon name="trash" size={14} />
               </button>

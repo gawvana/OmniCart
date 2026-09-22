@@ -26,8 +26,8 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
             onClick={() => onChange(opt.id)}
             className={`py-3 px-2 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
               isSelected
-                ? 'bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 font-bold shadow-sm'
-                : 'bg-white/50 dark:bg-zinc-800/50 border-zinc-200/50 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800'
+                ? 'liquid-glass-elevated border-emerald-500/50 text-emerald-400 font-semibold shadow-sm shadow-emerald-500/10'
+                : 'liquid-glass-subtle border-white/10 text-slate-300 hover:border-white/20'
             }`}
           >
             <AppIcon name={opt.icon} size={18} />

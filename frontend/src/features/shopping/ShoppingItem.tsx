@@ -1,33 +1,70 @@
 import React from 'react';
-import { motion, useAnimation } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ShoppingItem as IShoppingItem } from '../../types';
-import { useTranslation } from 'react-i18next';
+import { LiquidCheckbox } from '@/design-system/components/LiquidCheckbox';
+import { AppIcon } from '@/design-system/icons/AppIcon';
+import { cn } from '@/utils/cn';
 
-export const ShoppingItem = ({ item, onToggle, onDelete }: { item: IShoppingItem, onToggle: (id: string) => void, onDelete: (id: string) => void }) => {
-  const controls = useAnimation();
-  const { t } = useTranslation();
-
+export const ShoppingItem: React.FC<{
+  item: IShoppingItem;
+  onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
+}> = ({ item, onToggle, onDelete }) => {
   return (
-    <motion.div 
-      drag="x" 
-      dragConstraints={{ left: -100, right: 0 }}
-      onDragEnd={(e, info) => { if (info.offset.x < -50) onDelete(item.id); }}
-      className={`p-4 mb-2 rounded-xl backdrop-blur-md bg-white/30 border border-white/20 flex items-center justify-between shadow-sm min-h-[44px] ${item.isPurchased ? 'opacity-50' : ''}`}
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.18 }}
+      className={cn(
+        'group relative p-3 rounded-2xl liquid-glass-subtle border border-white/[0.06] hover:border-white/[0.12] transition-all flex items-center justify-between gap-3 select-none',
+        item.isPurchased && 'opacity-50'
+      )}
     >
-      <div className="flex items-center gap-3">
-        <input 
-          type="checkbox" 
-          checked={item.isPurchased} 
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <LiquidCheckbox
+          checked={Boolean(item.isPurchased)}
           onChange={() => onToggle(item.id)}
-          className="w-6 h-6 rounded-full border-2 border-primary/50 text-primary focus:ring-primary/50 bg-white/50"
+          ariaLabel={`Mark ${item.name} as purchased`}
         />
-        <div>
-          <h4 className={`text-lg font-medium text-gray-800 ${item.isPurchased ? 'line-through' : ''}`}>
-            {item.name} {item.category && <span>{item.category}</span>}
-          </h4>
-          <p className="text-sm text-gray-600">{item.quantity} {item.unit} {item.price ? `• $${item.price}` : ''}</p>
+        <div className="min-w-0 flex-1">
+          <div
+            className={cn(
+              'text-sm font-medium tracking-tight truncate transition-colors',
+              item.isPurchased ? 'line-through text-slate-400' : 'text-slate-100'
+            )}
+          >
+            {item.name}
+          </div>
+          <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400">
+            <span>
+              {item.quantity} {item.unit || 'шт'}
+            </span>
+            {item.price ? (
+              <>
+                <span className="text-slate-600">•</span>
+                <span className="text-emerald-400 font-medium">{item.price} UZS</span>
+              </>
+            ) : null}
+            {item.category && item.category !== 'Другое' ? (
+              <>
+                <span className="text-slate-600">•</span>
+                <span className="text-slate-400">{item.category}</span>
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => onDelete(item.id)}
+        aria-label="Delete item"
+        className="w-7 h-7 rounded-xl flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 active:scale-95 transition-all opacity-70 group-hover:opacity-100"
+      >
+        <AppIcon name="trash" size={15} />
+      </button>
     </motion.div>
   );
 };

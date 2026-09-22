@@ -5,8 +5,9 @@ import { SpendingChart } from '../features/analytics/SpendingChart';
 import { CategoryBreakdown } from '../features/analytics/CategoryBreakdown';
 import { InsightCard } from '../features/analytics/InsightCard';
 import { AppIcon } from '@/design-system/icons/AppIcon';
+import { LiquidCard } from '@/design-system/components/GlassCard';
 
-export const AnalyticsPage = () => {
+export const AnalyticsPage: React.FC = () => {
   const { t } = useTranslation();
   const [period, setPeriod] = useState('30d');
   const [data, setData] = useState<any>(null);
@@ -42,30 +43,31 @@ export const AnalyticsPage = () => {
       {/* Header */}
       <header className="flex justify-between items-center pt-2">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">
+          <h1 className="text-xl font-bold text-white tracking-tight">
             {t('analytics', 'Аналитика')}
           </h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Статистика трат и привычек
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            Динамика и категории расходов
           </p>
         </div>
-        <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-          <AppIcon name="chart" size={20} />
+        <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 flex items-center justify-center">
+          <AppIcon name="analytics" size={16} />
         </div>
       </header>
 
       {/* Period Selector Tabs */}
-      <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80">
+      <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl liquid-glass-subtle border border-white/[0.06]">
         {periods.map((p) => {
           const isSelected = period === p.id;
           return (
             <button
               key={p.id}
+              type="button"
               onClick={() => setPeriod(p.id)}
-              className={`py-1.5 text-xs font-semibold rounded-xl transition-all ${
+              className={`py-1.5 text-xs font-semibold rounded-xl transition-all select-none ${
                 isSelected
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               {p.label}
@@ -75,28 +77,28 @@ export const AnalyticsPage = () => {
       </div>
 
       {/* Stat Summary Cards */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="p-4 rounded-2xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-white/20 dark:border-zinc-800 shadow-sm">
-          <p className="text-[11px] font-medium text-zinc-400 mb-1">
+      <div className="grid grid-cols-2 gap-2.5">
+        <LiquidCard variant="subtle" padding="sm" className="border-white/[0.06]">
+          <p className="text-[10px] font-medium text-slate-400 mb-1">
             {t('totalSpent', 'Всего потрачено')}
           </p>
-          <p className="text-xl font-bold text-zinc-900 dark:text-white">
+          <p className="text-lg font-bold text-white tracking-tight">
             {isLoading ? '...' : (data?.total_spent || 0).toLocaleString()}
-            <span className="text-xs font-normal text-zinc-400 ml-1">
+            <span className="text-[10px] font-normal text-slate-400 ml-1">
               {data?.currency || 'UZS'}
             </span>
           </p>
-        </div>
+        </LiquidCard>
 
-        <div className="p-4 rounded-2xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-white/20 dark:border-zinc-800 shadow-sm">
-          <p className="text-[11px] font-medium text-zinc-400 mb-1">
+        <LiquidCard variant="subtle" padding="sm" className="border-white/[0.06]">
+          <p className="text-[10px] font-medium text-slate-400 mb-1">
             {t('itemsBought', 'Покупок')}
           </p>
-          <p className="text-xl font-bold text-zinc-900 dark:text-white">
+          <p className="text-lg font-bold text-white tracking-tight">
             {isLoading ? '...' : data?.purchase_count || 0}
-            <span className="text-xs font-normal text-zinc-400 ml-1">чеков</span>
+            <span className="text-[10px] font-normal text-slate-400 ml-1">чеков</span>
           </p>
-        </div>
+        </LiquidCard>
       </div>
 
       {/* Spending Trend Chart */}
@@ -132,7 +134,7 @@ export const AnalyticsPage = () => {
       {/* AI Insights Card */}
       <InsightCard
         title="AI Анализ расходов"
-        description="Ваши расходы на базовые продукты стабилизировались. В среднем вы совершаете покупки каждые 3 дня."
+        description="Ваши расходы на базовые продукты стабильны. В среднем вы совершаете закупки раз в 3 дня."
         type="positive"
       />
     </div>

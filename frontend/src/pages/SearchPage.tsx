@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { searchApi } from '../api/search';
 import { AppIcon } from '@/design-system/icons/AppIcon';
+import { GlassInput } from '@/design-system/components/GlassInput';
+import { LiquidCard } from '@/design-system/components/GlassCard';
 
 export const SearchPage = () => {
   const { t } = useTranslation();
@@ -37,119 +39,121 @@ export const SearchPage = () => {
   }, [query]);
 
   return (
-    <div className="p-4 space-y-5 max-w-md mx-auto min-h-screen pb-28">
+    <div className="p-4 space-y-4 max-w-md mx-auto min-h-screen pb-28">
       {/* Header */}
       <header className="pt-2">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">
+        <h1 className="text-xl font-bold text-white tracking-tight">
           {t('search', 'Поиск')}
         </h1>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="text-xs text-slate-400">
           Поиск по спискам, истории и каталогу
         </p>
       </header>
 
-      {/* Search Bar */}
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
-          <AppIcon name="search" size={18} />
-        </div>
-        <input
+      {/* Search Input */}
+      <div>
+        <GlassInput
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Найти товар, покупку, категорию..."
-          className="w-full pl-10 pr-10 py-3 rounded-2xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-white/20 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white outline-none shadow-sm focus:border-blue-500 transition-all"
+          icon={<AppIcon name="search" size={16} />}
+          rightAction={
+            query ? (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                className="text-slate-400 hover:text-white p-1"
+              >
+                <AppIcon name="close" size={14} />
+              </button>
+            ) : null
+          }
           autoFocus
         />
-        {query && (
-          <button
-            onClick={() => setQuery('')}
-            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-400 hover:text-zinc-600"
-          >
-            <AppIcon name="close" size={16} />
-          </button>
-        )}
       </div>
 
       {/* Results */}
       {isSearching ? (
         <div className="space-y-3">
-          <div className="h-14 bg-white/40 dark:bg-zinc-800/40 rounded-2xl animate-pulse" />
-          <div className="h-14 bg-white/40 dark:bg-zinc-800/40 rounded-2xl animate-pulse" />
+          <div className="h-14 bg-white/[0.04] rounded-2xl animate-pulse" />
+          <div className="h-14 bg-white/[0.04] rounded-2xl animate-pulse" />
         </div>
       ) : !query.trim() ? (
-        <div className="text-center py-16 px-4 rounded-3xl bg-white/40 dark:bg-zinc-900/40 border border-white/20 dark:border-zinc-800 space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center">
-            <AppIcon name="search" size={24} />
+        <LiquidCard variant="subtle" padding="lg" className="text-center py-14 space-y-2 border-dashed border-white/10">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center border border-emerald-500/20">
+            <AppIcon name="search" size={22} />
           </div>
-          <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
+          <h3 className="text-sm font-semibold text-white">
             Быстрый глобальный поиск
           </h3>
-          <p className="text-xs text-zinc-500 max-w-xs mx-auto">
+          <p className="text-xs text-slate-400 max-w-xs mx-auto">
             Начните вводить название товара (например, "молоко", "яйца")
           </p>
-        </div>
+        </LiquidCard>
       ) : results && (!results.items?.length && !results.history?.length && !results.products?.length) ? (
-        <div className="text-center py-12 text-xs text-zinc-400">
+        <LiquidCard variant="subtle" padding="md" className="text-center py-10 text-xs text-slate-400">
           Ничего не найдено по запросу "{query}"
-        </div>
+        </LiquidCard>
       ) : results ? (
         <div className="space-y-4">
           {/* Shopping items */}
           {results.items && results.items.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1">
+              <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-1">
                 В списках ({results.items.length})
               </h3>
-              <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60 rounded-2xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-white/20 dark:border-zinc-800 p-1">
+              <LiquidCard variant="subtle" padding="none" className="divide-y divide-white/[0.06] overflow-hidden">
                 {results.items.map((item) => (
-                  <div key={item.id} className="p-2.5 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <AppIcon name="cart" size={14} className="text-blue-600" />
-                      <span className="font-semibold text-zinc-900 dark:text-white">{item.name}</span>
+                  <div key={item.id} className="p-3 flex items-center justify-between text-xs hover:bg-white/[0.02] transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 flex items-center justify-center">
+                        <AppIcon name="cart" size={13} />
+                      </div>
+                      <span className="font-medium text-white">{item.name}</span>
                     </div>
-                    <span className="text-[10px] text-zinc-400">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-slate-300">
                       {item.is_purchased ? 'Куплено' : 'В корзине'}
                     </span>
                   </div>
                 ))}
-              </div>
+              </LiquidCard>
             </div>
           )}
 
           {/* History */}
           {results.history && results.history.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1">
+              <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-1">
                 В истории покупок ({results.history.length})
               </h3>
-              <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60 rounded-2xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-white/20 dark:border-zinc-800 p-1">
+              <LiquidCard variant="subtle" padding="none" className="divide-y divide-white/[0.06] overflow-hidden">
                 {results.history.map((hist) => (
-                  <div key={hist.id} className="p-2.5 flex items-center justify-between text-xs">
-                    <span className="font-medium text-zinc-900 dark:text-white">{hist.name}</span>
+                  <div key={hist.id} className="p-3 flex items-center justify-between text-xs hover:bg-white/[0.02] transition-colors">
+                    <span className="font-medium text-white">{hist.name}</span>
                     {hist.price && (
-                      <span className="text-zinc-500 font-semibold">{hist.price.toLocaleString()} UZS</span>
+                      <span className="text-emerald-400 font-medium">{hist.price.toLocaleString()} UZS</span>
                     )}
                   </div>
                 ))}
-              </div>
+              </LiquidCard>
             </div>
           )}
 
           {/* Catalog */}
           {results.products && results.products.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1">
+              <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-1">
                 В каталоге ({results.products.length})
               </h3>
-              <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60 rounded-2xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-white/20 dark:border-zinc-800 p-1">
+              <LiquidCard variant="subtle" padding="none" className="divide-y divide-white/[0.06] overflow-hidden">
                 {results.products.map((prod) => (
-                  <div key={prod.id} className="p-2.5 flex items-center justify-between text-xs">
-                    <span className="font-medium text-zinc-900 dark:text-white">{prod.name}</span>
-                    <span className="text-[10px] text-zinc-400">{prod.default_unit || 'шт'}</span>
+                  <div key={prod.id} className="p-3 flex items-center justify-between text-xs hover:bg-white/[0.02] transition-colors">
+                    <span className="font-medium text-white">{prod.name}</span>
+                    <span className="text-[10px] text-slate-400">{prod.default_unit || 'шт'}</span>
                   </div>
                 ))}
-              </div>
+              </LiquidCard>
             </div>
           )}
         </div>

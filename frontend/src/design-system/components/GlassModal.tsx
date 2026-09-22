@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/utils/cn';
 import { tokens } from '../tokens';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface GlassModalProps {
   isOpen: boolean;
@@ -18,7 +19,7 @@ export const GlassModal: React.FC<GlassModalProps> = ({
   title,
   children,
   size = 'md',
-  className
+  className,
 }) => {
   useEffect(() => {
     if (isOpen) {
@@ -26,7 +27,9 @@ export const GlassModal: React.FC<GlassModalProps> = ({
     } else {
       document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen]);
 
   const sizes = {
@@ -44,30 +47,37 @@ export const GlassModal: React.FC<GlassModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/70 backdrop-blur-md"
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.94, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={tokens.motion.normal}
+            exit={{ opacity: 0, scale: 0.94, y: 12 }}
+            transition={tokens.motion.springy}
             className={cn(
-              "relative w-full bg-surface-elevated backdrop-blur-2xl border border-border rounded-3xl shadow-xl overflow-hidden",
+              'relative w-full liquid-glass-floating rounded-3xl border border-white/12 shadow-2xl overflow-hidden',
               sizes[size],
               className
             )}
           >
             {title && (
-              <div className="px-6 py-4 border-b border-border">
-                <h2 className="text-lg font-semibold text-text-primary">{title}</h2>
+              <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between">
+                <h2 className="text-base font-semibold text-white tracking-tight">{title}</h2>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-7 h-7 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
+                >
+                  <AppIcon name="close" size={16} />
+                </button>
               </div>
             )}
-            <div className="p-6">
-              {children}
-            </div>
+            <div className="p-6">{children}</div>
           </motion.div>
         </div>
       )}
     </AnimatePresence>
   );
 };
+
+export const LiquidModal = GlassModal;

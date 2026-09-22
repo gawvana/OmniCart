@@ -6,8 +6,12 @@ import { MemberList } from '../features/family/MemberList';
 import { InviteModal } from '../features/family/InviteModal';
 import { ActivityFeed } from '../features/family/ActivityFeed';
 import { AppIcon } from '@/design-system/icons/AppIcon';
+import { LiquidModal } from '@/design-system/components/GlassModal';
+import { GlassInput } from '@/design-system/components/GlassInput';
+import { PrimaryButton, SecondaryButton } from '@/design-system/components/GlassButton';
+import { GlassSkeleton } from '@/design-system/components/GlassSkeleton';
 
-export const FamilyPage = () => {
+export const FamilyPage: React.FC = () => {
   const { t } = useTranslation();
   const [families, setFamilies] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
@@ -80,154 +84,146 @@ export const FamilyPage = () => {
   };
 
   return (
-    <div className="p-4 space-y-6 max-w-md mx-auto min-h-screen pb-28">
+    <div className="p-4 space-y-5 max-w-md mx-auto min-h-screen pb-28">
       {/* Header */}
       <header className="flex justify-between items-center pt-2">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">
+          <h1 className="text-xl font-bold text-white tracking-tight">
             {t('family', 'Семья')}
           </h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Совместные покупки и списки
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            Совместный список и участники
           </p>
         </div>
-        <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-          <AppIcon name="family" size={20} />
+        <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 flex items-center justify-center">
+          <AppIcon name="family" size={16} />
         </div>
       </header>
 
       {/* Main Family Card or Empty State */}
       {isLoading ? (
-        <div className="h-32 bg-white/40 dark:bg-zinc-800/40 rounded-3xl animate-pulse" />
+        <GlassSkeleton variant="card" height={100} />
       ) : activeFamily ? (
-        <div className="space-y-4">
-          <FamilyCard
-            id={activeFamily.id}
-            name={activeFamily.name}
-            memberCount={members.length || 1}
-            onInvite={handleOpenInvite}
-          />
-
-          {/* Members section */}
-          <section className="space-y-2.5">
-            <div className="flex items-center justify-between px-1">
-              <h2 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
-                Участники ({members.length || 1})
-              </h2>
-            </div>
-            <MemberList
-              members={
-                members.length > 0
-                  ? members.map((m) => ({
-                      id: m.id,
-                      name: m.name || 'Участник',
-                      role: m.role || 'member',
-                      isCurrentUser: m.is_current_user || false,
-                    }))
-                  : [
-                      {
-                        id: '1',
-                        name: 'Вы (Владелец)',
-                        role: 'owner',
-                        isCurrentUser: true,
-                      },
-                    ]
-              }
-              canManage={true}
-            />
-          </section>
-
-          {/* Activity Feed */}
-          <section className="space-y-2.5">
-            <h2 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider px-1">
-              Недавние действия
-            </h2>
-            <ActivityFeed
-              activities={
-                activities.length > 0
-                  ? activities.map((a) => ({
-                      id: a.id,
-                      eventType: a.event_type || 'item_purchased',
-                      userName: a.user_name || 'Участник',
-                      itemName: a.data?.item_name || 'Товар',
-                      timeAgo: 'Недавно',
-                    }))
-                  : [
-                      {
-                        id: 'act-1',
-                        eventType: 'item_purchased',
-                        userName: 'Семья',
-                        itemName: 'Молоко 2л',
-                        timeAgo: '2 ч. назад',
-                      },
-                    ]
-              }
-            />
-          </section>
-        </div>
+        <FamilyCard
+          id={activeFamily.id}
+          name={activeFamily.name}
+          memberCount={members.length || 1}
+          onInvite={handleOpenInvite}
+        />
       ) : (
-        <div className="p-8 rounded-3xl bg-white/60 dark:bg-zinc-900/60 border border-white/20 dark:border-zinc-800 text-center space-y-4">
-          <div className="w-16 h-16 rounded-3xl bg-purple-500/10 text-purple-600 dark:text-purple-400 mx-auto flex items-center justify-center">
-            <AppIcon name="family" size={32} />
+        <div className="p-6 rounded-3xl liquid-glass-subtle border border-white/[0.06] text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center border border-emerald-500/20">
+            <AppIcon name="family" size={22} />
           </div>
           <div>
-            <h2 className="text-base font-bold text-zinc-900 dark:text-white mb-1">
-              Создайте семейную группу
-            </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto leading-relaxed">
-              Делитесь списками с близкими, синхронизируйте корзину в реальном времени и управляйте семейным бюджетом
+            <h3 className="font-semibold text-white text-sm">Семья ещё не создана</h3>
+            <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+              Создайте семейную группу, чтобы синхронизировать списки покупок с близкими
             </p>
           </div>
-          <button
-            onClick={() => setIsCreateOpen(true)}
-            className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-md transition-all active:scale-[0.98]"
-          >
+          <PrimaryButton size="sm" onClick={() => setIsCreateOpen(true)}>
             Создать семью
-          </button>
+          </PrimaryButton>
         </div>
+      )}
+
+      {/* Members Section */}
+      {activeFamily && (
+        <section className="space-y-2.5">
+          <div className="flex items-center justify-between px-0.5">
+            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Участники ({members.length})
+            </h2>
+            <button
+              type="button"
+              onClick={handleOpenInvite}
+              className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium"
+            >
+              + Пригласить
+            </button>
+          </div>
+          <MemberList
+            members={
+              members.length > 0
+                ? members.map((m: any) => ({
+                    id: m.id || m.user_id,
+                    name: m.first_name || m.name || 'Участник',
+                    role: m.role || 'member',
+                    isCurrentUser: m.is_current,
+                  }))
+                : [
+                    {
+                      id: '1',
+                      name: 'Вы',
+                      role: 'owner',
+                      isCurrentUser: true,
+                    },
+                  ]
+            }
+          />
+        </section>
+      )}
+
+      {/* Activity Feed Section */}
+      {activeFamily && (
+        <section className="space-y-2.5">
+          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-0.5">
+            Лента активности
+          </h2>
+          <ActivityFeed
+            activities={
+              activities.length > 0
+                ? activities.map((a: any) => ({
+                    id: a.id,
+                    eventType: a.action || 'item_added',
+                    userName: a.details?.user_name || 'Участник',
+                    itemName: a.details?.item_name || '',
+                    timeAgo: a.created_at ? new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'недавно',
+                  }))
+                : [
+                    {
+                      id: 'default-act',
+                      eventType: 'member_joined',
+                      userName: 'Вы',
+                      timeAgo: 'Только что',
+                    },
+                  ]
+            }
+          />
+        </section>
       )}
 
       {/* Modal: Create Family */}
-      {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-base font-bold text-zinc-900 dark:text-white">Создание семьи</h3>
-              <button onClick={() => setIsCreateOpen(false)} className="text-zinc-400 p-1">
-                <AppIcon name="close" size={18} />
-              </button>
-            </div>
-            <form onSubmit={handleCreateFamily} className="space-y-4">
-              <input
-                type="text"
-                value={familyName}
-                onChange={(e) => setFamilyName(e.target.value)}
-                placeholder="Название (например, Наша семья)"
-                className="w-full p-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-xs text-zinc-900 dark:text-white outline-none"
-                autoFocus
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="submit"
-                  disabled={isCreating}
-                  className="py-2.5 rounded-xl bg-blue-600 text-white font-medium text-xs hover:bg-blue-700 transition-colors"
-                >
-                  {isCreating ? 'Создание...' : 'Создать'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsCreateOpen(false)}
-                  className="py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-xs"
-                >
-                  Отмена
-                </button>
-              </div>
-            </form>
+      <LiquidModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        title="Создать семейную группу"
+        size="sm"
+      >
+        <form onSubmit={handleCreateFamily} className="space-y-4">
+          <GlassInput
+            value={familyName}
+            onChange={(e) => setFamilyName(e.target.value)}
+            placeholder="Название (например, Семья Ивановых)"
+            autoFocus
+          />
+          <div className="flex gap-2">
+            <SecondaryButton fullWidth onClick={() => setIsCreateOpen(false)}>
+              Отмена
+            </SecondaryButton>
+            <PrimaryButton
+              type="submit"
+              disabled={isCreating || !familyName.trim()}
+              loading={isCreating}
+              fullWidth
+            >
+              Создать
+            </PrimaryButton>
           </div>
-        </div>
-      )}
+        </form>
+      </LiquidModal>
 
-      {/* Modal: Invite Link */}
+      {/* Modal: Invite */}
       <InviteModal
         isOpen={isInviteOpen}
         onClose={() => setIsInviteOpen(false)}

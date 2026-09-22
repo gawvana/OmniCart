@@ -18,13 +18,13 @@ export const HistoryGroup: React.FC<HistoryGroupProps> = ({
 }) => {
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between px-3 text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+      <div className="flex items-center justify-between px-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
         <span>{title}</span>
         {totalSpent !== undefined && totalSpent > 0 && (
-          <span>{totalSpent.toLocaleString()} {currency}</span>
+          <span className="text-emerald-400 font-medium">{totalSpent.toLocaleString()} {currency}</span>
         )}
       </div>
-      <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60 rounded-2xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-white/20 dark:border-zinc-800 p-1">
+      <div className="divide-y divide-white/[0.04] rounded-2xl liquid-glass-subtle border border-white/[0.06] p-1.5">
         {items.map((it) => (
           <HistoryItem key={it.id} item={it} onReAdd={onReAdd} />
         ))}

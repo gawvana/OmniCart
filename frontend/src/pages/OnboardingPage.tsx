@@ -66,15 +66,15 @@ export const OnboardingPage: React.FC = () => {
       {/* Top Header */}
       <div className="flex justify-between items-center pt-4">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-white shadow-md shadow-emerald-900/30">
             <AppIcon name="cart" size={20} />
           </div>
-          <span className="font-bold text-lg text-slate-800 dark:text-white">OmniCart AI</span>
+          <span className="font-bold text-lg text-white">OmniCart AI</span>
         </div>
         {!isLast && (
           <button
             onClick={handleSkip}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-200/50 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-300/50 transition-colors"
+            className="text-xs font-medium px-3 py-1.5 rounded-full bg-white/10 text-slate-300 hover:bg-white/15 transition-colors"
           >
             {t('common.skip', 'Skip')}
           </button>
@@ -83,20 +83,20 @@ export const OnboardingPage: React.FC = () => {
 
       {/* Main Content Card */}
       <div className="my-auto py-8">
-        <GlassCard className="p-8 text-center flex flex-col items-center shadow-xl backdrop-blur-xl border-white/20">
+        <GlassCard className="p-8 text-center flex flex-col items-center shadow-xl backdrop-blur-xl border-white/10">
           <div className="relative mb-6">
-            <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-blue-500/20 to-purple-500/20 border border-white/30 flex items-center justify-center text-blue-500 shadow-inner">
+            <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-emerald-500/20 to-emerald-400/5 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shadow-inner">
               <AppIcon name={step.icon} size={48} />
             </div>
-            <span className="absolute -top-2 -right-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-600 text-white shadow">
+            <span className="absolute -top-2 -right-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 shadow">
               {step.badge}
             </span>
           </div>
 
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-3">
+          <h2 className="text-2xl font-bold text-white mb-3">
             {t(step.titleKey, step.defaultTitle)}
           </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-xs">
+          <p className="text-sm text-slate-300 leading-relaxed max-w-xs">
             {t(step.descKey, step.defaultDesc)}
           </p>
 
@@ -106,7 +106,7 @@ export const OnboardingPage: React.FC = () => {
               <div
                 key={idx}
                 className={`h-2 rounded-full transition-all duration-300 ${
-                  idx === currentStep ? 'w-8 bg-blue-500' : 'w-2 bg-slate-300 dark:bg-white/20'
+                  idx === currentStep ? 'w-8 bg-emerald-400' : 'w-2 bg-white/20'
                 }`}
               />
             ))}

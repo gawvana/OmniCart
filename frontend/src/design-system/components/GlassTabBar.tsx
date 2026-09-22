@@ -18,40 +18,48 @@ export interface GlassTabBarProps {
 
 export const GlassTabBar: React.FC<GlassTabBarProps> = ({ items, activeIndex, onTabClick, className }) => {
   return (
-    <div className={cn(
-      "fixed bottom-0 inset-x-0 pb-sab pt-2 px-2 bg-surface/80 backdrop-blur-xl border-t border-border z-40",
-      className
-    )}>
-      <div className="flex items-center justify-around h-14">
+    <div
+      className={cn(
+        'fixed bottom-0 inset-x-0 pb-sab pt-1.5 px-3 liquid-glass-floating border-t border-white/[0.08] z-40',
+        className
+      )}
+    >
+      <div className="flex items-center justify-around h-13 max-w-md mx-auto">
         {items.map((item, index) => {
           const isActive = index === activeIndex;
           return (
             <button
               key={index}
               onClick={() => onTabClick(index, item.path)}
-              className="relative flex flex-col items-center justify-center w-full h-full text-xs font-medium transition-colors focus:outline-none"
+              className="relative flex flex-col items-center justify-center flex-1 h-full py-1 text-[11px] font-medium transition-colors focus:outline-none select-none group"
             >
-              <div className={cn(
-                "mb-1 relative z-10 transition-colors",
-                isActive ? "text-accent" : "text-text-tertiary"
-              )}>
+              <div
+                className={cn(
+                  'mb-0.5 relative z-10 transition-transform duration-200',
+                  isActive ? 'text-emerald-400 scale-105' : 'text-slate-400 group-hover:text-slate-200'
+                )}
+              >
                 {item.icon}
-                {item.badge && (
-                  <span className="absolute -top-1 -right-2 bg-destructive text-white text-[10px] leading-none px-1.5 py-0.5 rounded-full font-bold">
+                {item.badge ? (
+                  <span className="absolute -top-1 -right-2 bg-emerald-500 text-white text-[9px] leading-none px-1.5 py-0.5 rounded-full font-bold shadow-sm">
                     {item.badge}
                   </span>
-                )}
+                ) : null}
               </div>
-              <span className={cn(
-                "relative z-10 transition-colors",
-                isActive ? "text-text-primary" : "text-text-tertiary"
-              )}>
+              <span
+                className={cn(
+                  'text-[10px] font-medium transition-colors tracking-tight',
+                  isActive ? 'text-white font-semibold' : 'text-slate-400'
+                )}
+              >
                 {item.label}
               </span>
+
               {isActive && (
                 <motion.div
-                  layoutId="tab-indicator"
-                  className="absolute top-0 w-12 h-1 bg-accent rounded-full opacity-20 blur-sm"
+                  layoutId="active-tab-indicator"
+                  className="absolute -top-1.5 w-8 h-[2px] bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                 />
               )}
             </button>

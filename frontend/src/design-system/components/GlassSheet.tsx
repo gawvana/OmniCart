@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { tokens } from '../tokens';
 import { cn } from '@/utils/cn';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface GlassSheetProps {
   isOpen: boolean;
@@ -17,7 +18,7 @@ export const GlassSheet: React.FC<GlassSheetProps> = ({
   onClose,
   title,
   children,
-  className
+  className,
 }) => {
   useEffect(() => {
     if (isOpen) {
@@ -25,7 +26,9 @@ export const GlassSheet: React.FC<GlassSheetProps> = ({
     } else {
       document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen]);
 
   const dragControls = useDragControls();
@@ -39,13 +42,13 @@ export const GlassSheet: React.FC<GlassSheetProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-md"
           />
           <motion.div
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={tokens.motion.normal}
+            transition={tokens.motion.springy}
             drag="y"
             dragControls={dragControls}
             dragConstraints={{ top: 0 }}
@@ -56,24 +59,33 @@ export const GlassSheet: React.FC<GlassSheetProps> = ({
               }
             }}
             className={cn(
-              "fixed inset-x-0 bottom-0 z-50 bg-surface-elevated backdrop-blur-2xl border-t border-border rounded-t-3xl pb-safe flex flex-col max-h-[90dvh]",
+              'fixed inset-x-0 bottom-0 z-50 liquid-glass-floating border-t border-white/12 rounded-t-[28px] pb-sab flex flex-col max-h-[88dvh] max-w-lg mx-auto shadow-2xl overflow-hidden',
               className
             )}
           >
+            {/* Drag Handle */}
             <div className="flex-shrink-0 pt-3 pb-2 flex justify-center w-full cursor-grab active:cursor-grabbing">
-              <div className="w-12 h-1.5 rounded-full bg-border-strong" />
+              <div className="w-10 h-1 rounded-full bg-white/20" />
             </div>
+
             {title && (
-              <div className="px-6 pb-4">
-                <h2 className="text-xl font-semibold text-text-primary">{title}</h2>
+              <div className="px-6 pb-3 pt-1 flex items-center justify-between border-b border-white/[0.06]">
+                <h2 className="text-base font-semibold text-white tracking-tight">{title}</h2>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-7 h-7 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
+                >
+                  <AppIcon name="close" size={16} />
+                </button>
               </div>
             )}
-            <div className="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar">
-              {children}
-            </div>
+            <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">{children}</div>
           </motion.div>
         </>
       )}
     </AnimatePresence>
   );
 };
+
+export const LiquidSheet = GlassSheet;

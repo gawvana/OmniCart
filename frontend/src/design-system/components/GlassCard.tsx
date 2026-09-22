@@ -1,33 +1,38 @@
 import React from 'react';
 import { cn } from '@/utils/cn';
 
-export interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'elevated' | 'floating';
-  padding?: 'none' | 'sm' | 'md' | 'lg';
+export interface LiquidCardProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: 'subtle' | 'default' | 'elevated' | 'floating' | 'green';
+  padding?: 'none' | 'xs' | 'sm' | 'md' | 'lg';
+  interactive?: boolean;
 }
 
-export const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
-  ({ className, variant = 'default', padding = 'md', children, ...props }, ref) => {
+export const LiquidCard = React.forwardRef<HTMLDivElement, LiquidCardProps>(
+  ({ className, variant = 'default', padding = 'md', interactive = false, children, ...props }, ref) => {
     const variants = {
-      default: 'bg-surface border-border',
-      elevated: 'bg-surface-elevated border-border shadow-sm',
-      floating: 'bg-surface-floating border-border-strong shadow-lg',
+      subtle: 'liquid-glass-subtle text-slate-200',
+      default: 'liquid-glass text-slate-100',
+      elevated: 'liquid-glass-elevated text-slate-50',
+      floating: 'liquid-glass-floating text-white shadow-2xl',
+      green: 'liquid-glass-green text-emerald-100',
     };
 
     const paddings = {
       none: '',
-      sm: 'p-3',
+      xs: 'p-2.5',
+      sm: 'p-3.5',
       md: 'p-5',
-      lg: 'p-8',
+      lg: 'p-6',
     };
 
     return (
       <div
         ref={ref}
         className={cn(
-          'rounded-2xl border backdrop-blur-xl supports-[backdrop-filter]:bg-opacity-70 overflow-hidden',
+          'rounded-2xl relative transition-all duration-200',
           variants[variant],
           paddings[padding],
+          interactive && 'hover:scale-[1.01] active:scale-[0.99] cursor-pointer hover:border-white/20',
           className
         )}
         {...props}
@@ -37,4 +42,8 @@ export const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
     );
   }
 );
-GlassCard.displayName = 'GlassCard';
+LiquidCard.displayName = 'LiquidCard';
+
+// Backward-compatible alias
+export const GlassCard = LiquidCard;
+export type GlassCardProps = LiquidCardProps;

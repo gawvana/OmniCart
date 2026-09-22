@@ -9,4 +9,5 @@ export * from './GlassHeader';
 export * from './GlassToast';
 export * from './GlassSkeleton';
 export * from './AnimatedBackground';
+export * from './LiquidCheckbox';
 export * from './Icon';

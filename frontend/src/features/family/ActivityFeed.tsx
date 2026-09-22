@@ -17,7 +17,7 @@ export interface ActivityFeedProps {
 export const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
   if (!activities || activities.length === 0) {
     return (
-      <div className="p-6 text-center text-xs text-zinc-400 bg-white/40 dark:bg-zinc-900/40 rounded-2xl border border-zinc-200/50 dark:border-zinc-800">
+      <div className="p-6 text-center text-xs text-slate-400 liquid-glass-subtle rounded-2xl border border-white/[0.06]">
         Нет недавних действий в семье
       </div>
     );
@@ -28,21 +28,21 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
       case 'item_purchased':
         return (
           <span>
-            <strong className="text-zinc-900 dark:text-white font-semibold">{item.userName || 'Кто-то'}</strong> купил(а){' '}
-            <span className="text-blue-600 dark:text-blue-400 font-medium">{item.itemName || 'товар'}</span>
+            <strong className="text-white font-semibold">{item.userName || 'Кто-то'}</strong> купил(а){' '}
+            <span className="text-emerald-400 font-medium">{item.itemName || 'товар'}</span>
           </span>
         );
       case 'item_added':
         return (
           <span>
-            <strong className="text-zinc-900 dark:text-white font-semibold">{item.userName || 'Кто-то'}</strong> добавил(а){' '}
-            <span className="text-zinc-700 dark:text-zinc-200 font-medium">{item.itemName || 'товар'}</span>
+            <strong className="text-white font-semibold">{item.userName || 'Кто-то'}</strong> добавил(а){' '}
+            <span className="text-slate-200 font-medium">{item.itemName || 'товар'}</span>
           </span>
         );
       case 'member_joined':
         return (
           <span>
-            <strong className="text-zinc-900 dark:text-white font-semibold">{item.userName || 'Новый участник'}</strong> присоединился к семье
+            <strong className="text-white font-semibold">{item.userName || 'Новый участник'}</strong> присоединился к семье
           </span>
         );
       default:
@@ -51,22 +51,22 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {activities.map((act) => (
         <div
           key={act.id}
-          className="p-3 rounded-xl bg-white/60 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800/60 flex items-center justify-between gap-3 text-xs"
+          className="p-3 rounded-xl liquid-glass-subtle border border-white/[0.05] flex items-center justify-between gap-3 text-xs"
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-              <AppIcon name="clock" size={14} />
+            <div className="w-6 h-6 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 flex items-center justify-center shrink-0">
+              <AppIcon name="clock" size={13} />
             </div>
-            <p className="truncate text-zinc-600 dark:text-zinc-300">
+            <p className="truncate text-slate-300 text-[11px]">
               {renderDescription(act)}
             </p>
           </div>
           {act.timeAgo && (
-            <span className="text-[11px] text-zinc-400 shrink-0">{act.timeAgo}</span>
+            <span className="text-[10px] text-slate-400 shrink-0 font-mono">{act.timeAgo}</span>
           )}
         </div>
       ))}

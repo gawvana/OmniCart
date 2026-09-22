@@ -3,7 +3,7 @@ import React from 'react';
 export interface LanguageOption {
   code: string;
   name: string;
-  flag: string;
+  short: string;
 }
 
 export interface LanguagePickerProps {
@@ -12,9 +12,9 @@ export interface LanguagePickerProps {
 }
 
 const LANGUAGES: LanguageOption[] = [
-  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-  { code: 'uz', name: "O'zbekcha", flag: '🇺🇿' },
-  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'ru', name: 'Русский', short: 'RU' },
+  { code: 'uz', name: "O'zbekcha", short: 'UZ' },
+  { code: 'en', name: 'English', short: 'EN' },
 ];
 
 export const LanguagePicker: React.FC<LanguagePickerProps> = ({
@@ -31,12 +31,12 @@ export const LanguagePicker: React.FC<LanguagePickerProps> = ({
             onClick={() => onChange(lang.code)}
             className={`p-3 rounded-2xl border text-center transition-all ${
               isSelected
-                ? 'bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 font-bold shadow-sm'
-                : 'bg-white/50 dark:bg-zinc-800/50 border-zinc-200/50 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800'
+                ? 'liquid-glass-elevated border-emerald-500/50 text-emerald-400 font-semibold shadow-sm shadow-emerald-500/10'
+                : 'liquid-glass-subtle border-white/10 text-slate-300 hover:border-white/20'
             }`}
           >
-            <div className="text-xl mb-1">{lang.flag}</div>
-            <div className="text-xs">{lang.name}</div>
+            <div className="text-base font-bold tracking-wider mb-0.5">{lang.short}</div>
+            <div className="text-[11px] opacity-80">{lang.name}</div>
           </button>
         );
       })}

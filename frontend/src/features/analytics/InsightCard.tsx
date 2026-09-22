@@ -15,22 +15,22 @@ export const InsightCard: React.FC<InsightCardProps> = ({
   const getBadgeStyle = () => {
     switch (type) {
       case 'positive':
-        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+        return 'liquid-glass-green text-emerald-300 border-emerald-500/25';
       case 'warning':
-        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+        return 'liquid-glass-subtle text-amber-300 border-amber-500/25';
       default:
-        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
+        return 'liquid-glass-subtle text-slate-300 border-white/10';
     }
   };
 
   return (
-    <div className={`p-4 rounded-2xl border backdrop-blur-md ${getBadgeStyle()} flex items-start gap-3`}>
-      <div className="p-2 rounded-xl bg-white/50 dark:bg-zinc-800/50 shrink-0">
-        <AppIcon name="sparkles" size={18} />
+    <div className={`p-3.5 rounded-2xl border ${getBadgeStyle()} flex items-start gap-3 select-none`}>
+      <div className="w-8 h-8 rounded-xl bg-white/[0.08] flex items-center justify-center shrink-0 mt-0.5 text-emerald-400 border border-white/10">
+        <AppIcon name="sparkles" size={16} />
       </div>
       <div>
-        <h4 className="text-xs font-bold text-zinc-900 dark:text-white mb-0.5">{title}</h4>
-        <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">{description}</p>
+        <h4 className="text-xs font-semibold text-white tracking-tight mb-0.5">{title}</h4>
+        <p className="text-[11px] text-slate-400 leading-relaxed">{description}</p>
       </div>
     </div>
   );

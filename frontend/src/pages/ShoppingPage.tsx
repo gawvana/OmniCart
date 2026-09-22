@@ -7,6 +7,7 @@ import { CompletedSection } from '../features/shopping/CompletedSection';
 import { ShoppingItem as IShoppingItem } from '../types';
 import { aiApi } from '../api/ai';
 import { AppIcon } from '@/design-system/icons/AppIcon';
+import { GlassSkeleton } from '@/design-system/components/GlassSkeleton';
 
 export const ShoppingPage = ({ listId = 'default' }: { listId?: string }) => {
   const { t } = useTranslation();
@@ -42,7 +43,7 @@ export const ShoppingPage = ({ listId = 'default' }: { listId?: string }) => {
             name: it.name,
             quantity: it.quantity || 1,
             unit: it.unit || 'шт',
-            category: it.category || 'Другое'
+            category: it.category || 'Другое',
           });
         }
       } else {
@@ -67,22 +68,23 @@ export const ShoppingPage = ({ listId = 'default' }: { listId?: string }) => {
   return (
     <div className="p-4 max-w-md mx-auto min-h-screen pb-28">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 pt-1">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">
+          <h1 className="text-xl font-bold text-white tracking-tight">
             {t('shoppingList', 'Список покупок')}
           </h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-[11px] text-slate-400 mt-0.5">
             {activeItems.length} активных товаров
           </p>
         </div>
 
         <button
+          type="button"
           onClick={() => setStoreMode(!storeMode)}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all select-none ${
             storeMode
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'bg-white/60 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700'
+              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-950/40'
+              : 'liquid-glass-subtle border border-white/10 text-slate-300 hover:border-white/20'
           }`}
         >
           <AppIcon name="store" size={14} />
@@ -92,7 +94,7 @@ export const ShoppingPage = ({ listId = 'default' }: { listId?: string }) => {
 
       {/* Input */}
       {!storeMode && (
-        <div className="mb-5 sticky top-2 z-10">
+        <div className="mb-4 sticky top-2 z-10">
           <AddItemInput
             onAdd={handleAdd}
             onAiParse={handleAiParse}
@@ -101,32 +103,35 @@ export const ShoppingPage = ({ listId = 'default' }: { listId?: string }) => {
         </div>
       )}
 
+      {/* AI Parsing status */}
       {isAiParsing && (
-        <div className="p-3 mb-4 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 text-xs flex items-center gap-2 animate-pulse">
+        <div className="p-3 mb-4 rounded-xl liquid-glass-green text-emerald-400 text-xs flex items-center gap-2 animate-pulse">
           <AppIcon name="sparkles" size={16} />
-          <span>AI распознает товары...</span>
+          <span>{t('ai.processing', 'AI обрабатывает ваш список...')}</span>
         </div>
       )}
 
       {/* Loading state */}
       {isLoading ? (
-        <div className="space-y-3">
-          <div className="h-14 bg-white/40 dark:bg-zinc-800/40 rounded-2xl animate-pulse" />
-          <div className="h-14 bg-white/40 dark:bg-zinc-800/40 rounded-2xl animate-pulse" />
-          <div className="h-14 bg-white/40 dark:bg-zinc-800/40 rounded-2xl animate-pulse" />
+        <div className="space-y-2.5">
+          <GlassSkeleton variant="card" />
+          <GlassSkeleton variant="card" />
+          <GlassSkeleton variant="card" />
         </div>
       ) : activeItems.length === 0 && completedItems.length === 0 ? (
-        <div className="text-center py-16 px-4 rounded-3xl bg-white/40 dark:bg-zinc-900/40 border border-white/20 dark:border-zinc-800">
-          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center mb-3">
-            <AppIcon name="cart" size={24} />
+        <div className="text-center py-16 px-4 rounded-3xl liquid-glass-subtle border border-white/[0.06]">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center mb-3 border border-emerald-500/20 shadow-inner">
+            <AppIcon name="cart" size={22} />
           </div>
-          <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-1">Список пуст</h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
-            Введите товар в поле выше или нажмите иконку AI для добавления целого списка
+          <h3 className="text-sm font-semibold text-white mb-1">
+            {t('shopping.emptyTitle', 'Список пока пуст')}
+          </h3>
+          <p className="text-xs text-slate-400 max-w-xs mx-auto">
+            {t('shopping.emptyDesc', 'Введите товар выше или нажмите иконку AI для добавления целого рецепта')}
           </p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {categories.map((cat) => (
             <CategorySection
               key={cat}

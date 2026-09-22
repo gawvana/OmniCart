@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppIcon } from '@/design-system/icons/AppIcon';
+import { cn } from '@/utils/cn';
 
-export const AddItemInput = ({
-  onAdd,
-  onAiParse,
-  isLoading = false,
-}: {
+export const AddItemInput: React.FC<{
   onAdd: (text: string) => void;
   onAiParse: (text: string) => void;
   isLoading?: boolean;
-}) => {
+}> = ({ onAdd, onAiParse, isLoading = false }) => {
   const [text, setText] = useState('');
   const { t } = useTranslation();
 
@@ -28,16 +25,17 @@ export const AddItemInput = ({
   };
 
   return (
-    <div className="p-2.5 backdrop-blur-xl bg-white/70 dark:bg-zinc-900/70 border border-white/30 dark:border-zinc-800 rounded-2xl flex items-center gap-2 shadow-sm">
+    <div className="p-1.5 liquid-glass-subtle border border-white/[0.08] rounded-2xl flex items-center gap-1.5 shadow-lg shadow-black/20 focus-within:border-emerald-500/40 transition-colors">
       <input
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={t('addItemPlaceholder', 'Добавить товар или список...')}
-        className="flex-1 bg-transparent border-none outline-none text-zinc-900 dark:text-white placeholder-zinc-400 text-sm px-2 min-h-[44px]"
+        placeholder={t('addItemPlaceholder', 'Добавить товар или продиктовать...')}
+        className="flex-1 bg-transparent border-none outline-none text-white placeholder:text-slate-500 text-sm px-3 min-h-[44px]"
       />
       <button
+        type="button"
         onClick={() => {
           if (text.trim()) {
             onAiParse(text.trim());
@@ -45,18 +43,22 @@ export const AddItemInput = ({
           }
         }}
         disabled={isLoading}
-        title="Распознать с помощью AI"
-        className="p-2.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+        title={t('ai.parseTitle', 'Распознать с помощью AI')}
+        className={cn(
+          'p-2.5 rounded-xl text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 active:scale-95 transition-all min-h-[40px] min-w-[40px] flex items-center justify-center',
+          isLoading && 'animate-pulse'
+        )}
       >
-        <AppIcon name="sparkles" size={18} />
+        <AppIcon name="sparkles" size={17} />
       </button>
       <button
+        type="button"
         onClick={handleAddClick}
-        disabled={isLoading}
-        title="Добавить"
-        className="p-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
+        disabled={isLoading || !text.trim()}
+        title={t('common.add', 'Добавить')}
+        className="p-2.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-40 disabled:hover:bg-emerald-500 active:scale-95 transition-all min-h-[40px] min-w-[40px] flex items-center justify-center shadow-md shadow-emerald-950/40"
       >
-        <AppIcon name="plus" size={18} />
+        <AppIcon name="plus" size={17} />
       </button>
     </div>
   );

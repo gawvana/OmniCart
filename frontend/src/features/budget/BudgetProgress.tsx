@@ -18,18 +18,18 @@ export const BudgetProgress: React.FC<BudgetProgressProps> = ({
 
   return (
     <div className={`space-y-1.5 ${className}`}>
-      <div className="flex justify-between text-xs font-medium">
-        <span className="text-zinc-600 dark:text-zinc-300">
+      <div className="flex justify-between text-[11px] font-medium">
+        <span className="text-slate-300">
           {spent.toLocaleString()} {currency}
         </span>
-        <span className={isOver ? 'text-rose-500 font-bold' : 'text-zinc-400'}>
+        <span className={isOver ? 'text-rose-400 font-bold' : 'text-slate-400'}>
           {percentage}%
         </span>
       </div>
-      <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+      <div className="h-1.5 w-full bg-white/[0.08] rounded-full overflow-hidden">
         <div
           className={`h-full transition-all duration-300 rounded-full ${
-            isOver ? 'bg-rose-500' : percentage > 80 ? 'bg-amber-500' : 'bg-emerald-500'
+            isOver ? 'bg-rose-500/85' : percentage > 85 ? 'bg-amber-400/85' : 'bg-emerald-500'
           }`}
           style={{ width: `${percentage}%` }}
         />

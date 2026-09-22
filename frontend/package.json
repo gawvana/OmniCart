@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.0",
     "@tanstack/react-query": "^5.62.0",
     "@tanstack/react-router": "^1.93.0",
     "@telegram-apps/sdk-react": "^2.0.0",

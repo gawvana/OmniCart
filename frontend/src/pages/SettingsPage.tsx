@@ -4,6 +4,8 @@ import { settingsApi } from '../api/settings';
 import { LanguagePicker } from '../features/settings/LanguagePicker';
 import { ThemeToggle } from '../features/settings/ThemeToggle';
 import { AppIcon } from '@/design-system/icons/AppIcon';
+import { LiquidCard } from '@/design-system/components/GlassCard';
+import { LiquidCheckbox } from '@/design-system/components/LiquidCheckbox';
 
 export const SettingsPage = () => {
   const { t, i18n } = useTranslation();
@@ -77,23 +79,33 @@ export const SettingsPage = () => {
     }
   };
 
+  const handleToggleAi = async () => {
+    const nextVal = !aiEnabled;
+    setAiEnabled(nextVal);
+    try {
+      await settingsApi.update({ ai_enabled: nextVal });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const currencies = ['UZS', 'USD', 'RUB', 'EUR'];
 
   return (
     <div className="p-4 space-y-5 max-w-md mx-auto min-h-screen pb-28">
       {/* Header */}
       <header className="pt-2">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">
+        <h1 className="text-xl font-bold text-white tracking-tight">
           {t('settings', 'Настройки')}
         </h1>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="text-xs text-slate-400">
           Персонализация и параметры приложения
         </p>
       </header>
 
       {/* Toast */}
       {toastMsg && (
-        <div className="p-3 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-xs font-semibold flex items-center gap-2 shadow-lg animate-fadeIn">
+        <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2 backdrop-blur-xl shadow-lg animate-fadeIn">
           <AppIcon name="check" size={16} />
           <span>{toastMsg}</span>
         </div>
@@ -101,7 +113,7 @@ export const SettingsPage = () => {
 
       {/* Language Section */}
       <div className="space-y-2">
-        <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1">
+        <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-1">
           {t('language', 'Язык интерфейса')}
         </h3>
         <LanguagePicker
@@ -112,7 +124,7 @@ export const SettingsPage = () => {
 
       {/* Theme Section */}
       <div className="space-y-2">
-        <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1">
+        <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-1">
           {t('theme', 'Тема оформления')}
         </h3>
         <ThemeToggle currentTheme={theme} onChange={handleThemeChange} />
@@ -120,7 +132,7 @@ export const SettingsPage = () => {
 
       {/* Currency Section */}
       <div className="space-y-2">
-        <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1">
+        <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-1">
           Основная валюта
         </h3>
         <div className="grid grid-cols-4 gap-2">
@@ -130,10 +142,10 @@ export const SettingsPage = () => {
               <button
                 key={curr}
                 onClick={() => handleCurrencyChange(curr)}
-                className={`py-2.5 rounded-xl border text-xs font-bold transition-all ${
+                className={`py-2.5 rounded-xl border text-xs font-semibold transition-all ${
                   isSelected
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                    : 'bg-white/60 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 border-zinc-200/50 dark:border-zinc-800 hover:bg-white'
+                    ? 'liquid-glass-elevated border-emerald-500/50 text-emerald-400 shadow-sm shadow-emerald-500/10'
+                    : 'liquid-glass-subtle border-white/10 text-slate-300 hover:border-white/20'
                 }`}
               >
                 {curr}
@@ -145,49 +157,53 @@ export const SettingsPage = () => {
 
       {/* Toggles */}
       <div className="space-y-2">
-        <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1">
+        <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-1">
           Уведомления и AI
         </h3>
-        <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60 rounded-2xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-white/20 dark:border-zinc-800 p-1">
-          <div className="p-3.5 flex items-center justify-between">
+        <LiquidCard variant="subtle" padding="none" className="divide-y divide-white/[0.06] overflow-hidden">
+          <div
+            className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors"
+            onClick={handleToggleNotifications}
+          >
             <div>
-              <p className="text-xs font-semibold text-zinc-900 dark:text-white">
+              <p className="text-xs font-medium text-white">
                 Telegram уведомления
               </p>
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-[11px] text-slate-400">
                 Напоминания о покупках и активности семьи
               </p>
             </div>
-            <input
-              type="checkbox"
+            <LiquidCheckbox
               checked={notifications}
               onChange={handleToggleNotifications}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer"
+              size="sm"
             />
           </div>
 
-          <div className="p-3.5 flex items-center justify-between">
+          <div
+            className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors"
+            onClick={handleToggleAi}
+          >
             <div>
-              <p className="text-xs font-semibold text-zinc-900 dark:text-white">
+              <p className="text-xs font-medium text-white">
                 AI Умные подсказки
               </p>
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-[11px] text-slate-400">
                 Авто-категоризация и предсказание пополнения
               </p>
             </div>
-            <input
-              type="checkbox"
+            <LiquidCheckbox
               checked={aiEnabled}
-              onChange={() => setAiEnabled(!aiEnabled)}
-              className="w-5 h-5 accent-blue-600 rounded cursor-pointer"
+              onChange={handleToggleAi}
+              size="sm"
             />
           </div>
-        </div>
+        </LiquidCard>
       </div>
 
       {/* App Version Info */}
-      <div className="text-center pt-4 text-xs text-zinc-400 space-y-1">
-        <p className="font-semibold text-zinc-500 dark:text-zinc-400">OmniCart AI 2.0</p>
+      <div className="text-center pt-4 text-xs text-slate-500 space-y-1">
+        <p className="font-semibold text-slate-400">OmniCart AI 2.0</p>
         <p className="text-[11px]">Production Rebuild • Telegram Mini App</p>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { AppIcon } from '@/design-system/icons/AppIcon';
+import { LiquidCard } from '@/design-system/components/GlassCard';
 
 export interface FamilyCardProps {
   id: string;
@@ -16,36 +17,38 @@ export const FamilyCard: React.FC<FamilyCardProps> = ({
   onSettings,
 }) => {
   return (
-    <div className="p-4 rounded-2xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-white/20 dark:border-zinc-800 flex items-center justify-between shadow-sm">
+    <LiquidCard variant="elevated" padding="md" className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-          <AppIcon name="family" size={20} />
+        <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 flex items-center justify-center">
+          <AppIcon name="family" size={18} />
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{name}</h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">{memberCount} участников</p>
+          <h3 className="text-xs font-semibold text-white tracking-tight">{name}</h3>
+          <p className="text-[11px] text-slate-400 mt-0.5">{memberCount} участников</p>
         </div>
       </div>
 
       <div className="flex items-center gap-1.5">
         {onInvite && (
           <button
+            type="button"
             onClick={onInvite}
-            className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-xs font-medium transition-all flex items-center gap-1.5 shadow-md shadow-emerald-950/30"
           >
-            <AppIcon name="plus" size={14} />
+            <AppIcon name="plus" size={13} />
             <span>Пригласить</span>
           </button>
         )}
         {onSettings && (
           <button
+            type="button"
             onClick={onSettings}
-            className="p-2 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all"
           >
-            <AppIcon name="gear" size={16} />
+            <AppIcon name="settings" size={15} />
           </button>
         )}
       </div>
-    </div>
+    </LiquidCard>
   );
 };
