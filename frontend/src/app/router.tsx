@@ -40,18 +40,18 @@ const rootRoute = createRootRoute({
 });
 
 // Lazy loaded routes
-const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: React.lazy(() => import('@/pages/HomePage')) });
-const shoppingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/shopping', component: React.lazy(() => import('@/pages/ShoppingPage')) });
-const listsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/lists', component: React.lazy(() => import('@/pages/ListsPage')) });
-const analyticsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/analytics', component: React.lazy(() => import('@/pages/AnalyticsPage')) });
-const profileRoute = createRoute({ getParentRoute: () => rootRoute, path: '/profile', component: React.lazy(() => import('@/pages/ProfilePage')) });
-const historyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/history', component: React.lazy(() => import('@/pages/HistoryPage')) });
-const familyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/family', component: React.lazy(() => import('@/pages/FamilyPage')) });
-const settingsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/settings', component: React.lazy(() => import('@/pages/SettingsPage')) });
-const searchRoute = createRoute({ getParentRoute: () => rootRoute, path: '/search', component: React.lazy(() => import('@/pages/SearchPage')) });
-const onboardingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/onboarding', component: React.lazy(() => import('@/pages/OnboardingPage')) });
-const budgetRoute = createRoute({ getParentRoute: () => rootRoute, path: '/budget', component: React.lazy(() => import('@/pages/BudgetPage')) });
-const recurringRoute = createRoute({ getParentRoute: () => rootRoute, path: '/recurring', component: React.lazy(() => import('@/pages/RecurringPage')) });
+const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: React.lazy(() => import('@/pages/HomePage').then(m => ({ default: m.HomePage }))) });
+const shoppingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/shopping', component: React.lazy(() => import('@/pages/ShoppingPage').then(m => ({ default: m.ShoppingPage }))) });
+const listsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/lists', component: React.lazy(() => import('@/pages/ListsPage').then(m => ({ default: m.ListsPage }))) });
+const analyticsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/analytics', component: React.lazy(() => import('@/pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage }))) });
+const profileRoute = createRoute({ getParentRoute: () => rootRoute, path: '/profile', component: React.lazy(() => import('@/pages/ProfilePage').then(m => ({ default: m.ProfilePage }))) });
+const historyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/history', component: React.lazy(() => import('@/pages/HistoryPage').then(m => ({ default: m.HistoryPage }))) });
+const familyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/family', component: React.lazy(() => import('@/pages/FamilyPage').then(m => ({ default: m.FamilyPage }))) });
+const settingsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/settings', component: React.lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage }))) });
+const searchRoute = createRoute({ getParentRoute: () => rootRoute, path: '/search', component: React.lazy(() => import('@/pages/SearchPage').then(m => ({ default: m.SearchPage }))) });
+const onboardingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/onboarding', component: React.lazy(() => import('@/pages/OnboardingPage').then(m => ({ default: m.OnboardingPage }))) });
+const budgetRoute = createRoute({ getParentRoute: () => rootRoute, path: '/budget', component: React.lazy(() => import('@/pages/BudgetPage').then(m => ({ default: m.BudgetPage }))) });
+const recurringRoute = createRoute({ getParentRoute: () => rootRoute, path: '/recurring', component: React.lazy(() => import('@/pages/RecurringPage').then(m => ({ default: m.RecurringPage }))) });
 
 const routeTree = rootRoute.addChildren([
   indexRoute, shoppingRoute, listsRoute, analyticsRoute, profileRoute,

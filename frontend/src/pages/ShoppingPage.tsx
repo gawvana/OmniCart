@@ -16,7 +16,7 @@ export const ShoppingPage = ({ listId = 'default' }: { listId?: string }) => {
   const activeItems = items.filter((i: IShoppingItem) => !i.isPurchased);
   const completedItems = items.filter((i: IShoppingItem) => i.isPurchased);
 
-  const categories = Array.from(new Set(activeItems.map((i: IShoppingItem) => i.category || 'Other')));
+  const categories = Array.from(new Set(activeItems.map((i: any) => i.category || 'Other'))) as string[];
 
   const handleAdd = (text: string) => {
     if (text.trim()) {

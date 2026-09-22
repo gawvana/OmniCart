@@ -3,11 +3,12 @@ import { motion, HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/utils/cn';
 import { tokens } from '../tokens';
 
-export interface GlassButtonProps extends Omit<HTMLMotionProps<"button">, 'ref'> {
+export interface GlassButtonProps extends Omit<HTMLMotionProps<"button">, 'ref' | 'children'> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'destructive';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   icon?: React.ReactNode;
+  children?: React.ReactNode;
   fullWidth?: boolean;
 }
 

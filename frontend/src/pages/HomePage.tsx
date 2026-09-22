@@ -41,7 +41,7 @@ export const HomePage = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {lists?.map(list => (
+            {lists?.map((list: any) => (
               <div key={list.id} className="p-4 rounded-2xl bg-white/70 backdrop-blur-md border border-white shadow-sm flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold text-lg">{list.name}</h3>

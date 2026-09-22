@@ -17,7 +17,7 @@ export const ListsPage = () => {
         <div>Loading...</div>
       ) : (
         <div className="grid grid-cols-2 gap-4">
-          {lists?.map(list => (
+          {lists?.map((list: any) => (
             <div key={list.id} className="p-4 rounded-2xl bg-white/60 backdrop-blur-md border border-white shadow-sm aspect-square flex flex-col justify-between">
               <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-sm">
                 📝

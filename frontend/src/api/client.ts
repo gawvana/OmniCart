@@ -1,83 +1,79 @@
-import { useTelegram } from '../hooks/useTelegram';
 import { ApiError } from '../types';
 
 const BASE_URL = '/api';
 
-class ApiClient {
-  private getHeaders(): HeadersInit {
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-    
-    // In a real app we might grab initData directly from Telegram SDK
-    // Let's assume we have it in window.Telegram or pass it globally
-    const initData = (window as any).Telegram?.WebApp?.initData;
-    if (initData) {
-      headers['X-Telegram-Init-Data'] = initData;
-    }
-    
-    return headers;
-  }
+export interface ApiClientOptions extends Omit<RequestInit, 'body'> {
+  body?: any;
+  params?: Record<string, any>;
+}
 
-  async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-    try {
-      const response = await fetch(`${BASE_URL}${endpoint}`, {
-        ...options,
-        headers: {
-          ...this.getHeaders(),
-          ...options.headers,
-        },
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw {
-          error: errorData.error || 'Request failed',
-          code: errorData.code || response.status.toString(),
-          details: errorData.details
-        } as ApiError;
+export async function apiClient<T>(endpoint: string, options: ApiClientOptions = {}): Promise<T> {
+  const { body, params, ...customConfig } = options;
+  let url = `${BASE_URL}${endpoint}`;
+  if (params) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, val]) => {
+      if (val !== undefined && val !== null) {
+        searchParams.append(key, String(val));
       }
-
-      const data = await response.json();
-      return data.data !== undefined ? data.data : data;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if ((error as Error).name === 'AbortError') {
-        throw { error: 'Request timeout', code: 'TIMEOUT' } as ApiError;
-      }
-      throw error;
+    });
+    const qs = searchParams.toString();
+    if (qs) {
+      url += (url.includes('?') ? '&' : '?') + qs;
     }
   }
 
-  get<T>(endpoint: string, options?: RequestInit) {
-    return this.request<T>(endpoint, { ...options, method: 'GET' });
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(customConfig.headers as Record<string, string>),
+  };
+  
+  const initData = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp?.initData : undefined;
+  if (initData) {
+    headers['X-Telegram-Init-Data'] = initData;
   }
 
-  post<T>(endpoint: string, data?: any, options?: RequestInit) {
-    return this.request<T>(endpoint, {
-      ...options,
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    });
+  const config: RequestInit = {
+    ...customConfig,
+    headers,
+  };
+  if (body !== undefined) {
+    config.body = typeof body === 'string' ? body : JSON.stringify(body);
   }
 
-  put<T>(endpoint: string, data?: any, options?: RequestInit) {
-    return this.request<T>(endpoint, {
-      ...options,
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-    });
-  }
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  config.signal = controller.signal;
 
-  delete<T>(endpoint: string, options?: RequestInit) {
-    return this.request<T>(endpoint, { ...options, method: 'DELETE' });
+  try {
+    const response = await fetch(url, config);
+    clearTimeout(timeoutId);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw {
+        error: errorData.error || 'Request failed',
+        code: errorData.code || response.status.toString(),
+        details: errorData.details,
+      } as ApiError;
+    }
+    if (response.status === 204) {
+      return undefined as unknown as T;
+    }
+    const data = await response.json();
+    return data.data !== undefined ? data.data : data;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if ((error as Error).name === 'AbortError') {
+      throw { error: 'Request timeout', code: 'TIMEOUT' } as ApiError;
+    }
+    throw error;
   }
 }
 
-export const api = new ApiClient();
+export const api = {
+  get: <T>(endpoint: string, options?: ApiClientOptions) => apiClient<T>(endpoint, { ...options, method: 'GET' }),
+  post: <T>(endpoint: string, body?: any, options?: ApiClientOptions) => apiClient<T>(endpoint, { ...options, method: 'POST', body }),
+  patch: <T>(endpoint: string, body?: any, options?: ApiClientOptions) => apiClient<T>(endpoint, { ...options, method: 'PATCH', body }),
+  put: <T>(endpoint: string, body?: any, options?: ApiClientOptions) => apiClient<T>(endpoint, { ...options, method: 'PUT', body }),
+  delete: <T>(endpoint: string, options?: ApiClientOptions) => apiClient<T>(endpoint, { ...options, method: 'DELETE' }),
+};

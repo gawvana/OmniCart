@@ -1,4 +1,3 @@
-import { initWebApp } from '@telegram-apps/sdk-react';
 import { useEffect, useState } from 'react';
 
 export function useTelegram() {
