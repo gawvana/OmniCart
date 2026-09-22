@@ -60,6 +60,15 @@ class ListRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def get_member(self, list_id: UUID, user_id: UUID) -> Optional[ShoppingListMember]:
+        stmt = select(ShoppingListMember).where(
+            and_(ShoppingListMember.list_id == list_id, ShoppingListMember.user_id == user_id)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
+    get = get_by_id
+
     async def add_member(self, list_id: UUID, user_id: UUID, role: str, added_by: Optional[UUID]) -> ShoppingListMember:
         member = ShoppingListMember(
             list_id=list_id,

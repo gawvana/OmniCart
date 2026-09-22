@@ -20,7 +20,7 @@ class FamilyService:
 
     async def create_family(self, user_id: UUID, name: str) -> Any:
         family_repo = FamilyRepository(self.session)
-        family = await family_repo.create(name=name)
+        family = await family_repo.create(name=name, created_by=user_id)
         await family_repo.add_member(family.id, user_id, role="owner")
         
         await self.log_activity(
@@ -59,7 +59,10 @@ class FamilyService:
             raise NotFoundError("Invite not found")
         if invite.is_used:
             raise ValidationError("Invite has already been used")
-        if invite.expires_at < datetime.now(timezone.utc):
+        exp = invite.expires_at
+        if exp.tzinfo is None:
+            exp = exp.replace(tzinfo=timezone.utc)
+        if exp < datetime.now(timezone.utc):
             raise ValidationError("Invite has expired")
             
         existing_member = await family_repo.get_member(invite.family_id, user_id)

@@ -28,13 +28,23 @@ class ItemRepository:
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
-    async def create(self, list_id: UUID, created_by: UUID, **kwargs) -> ShoppingItem:
-        item = ShoppingItem(list_id=list_id, created_by=created_by, **kwargs)
+    async def get_by_mutation_id(self, client_mutation_id: str) -> Optional[ShoppingItem]:
+        stmt = select(ShoppingItem).where(ShoppingItem.client_mutation_id == client_mutation_id)
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
+    async def create(self, list_id: UUID, created_by: Optional[UUID] = None, created_by_id: Optional[UUID] = None, **kwargs) -> ShoppingItem:
+        creator = created_by or created_by_id
+        item = ShoppingItem(list_id=list_id, created_by=creator, **kwargs)
         self.session.add(item)
         await self.session.flush()
         return item
 
     async def update(self, item_id: UUID, **kwargs) -> ShoppingItem:
+        if 'purchased_by_id' in kwargs:
+            kwargs['purchased_by'] = kwargs.pop('purchased_by_id')
+        if 'created_by_id' in kwargs:
+            kwargs['created_by'] = kwargs.pop('created_by_id')
         if 'version' not in kwargs:
             kwargs['version'] = ShoppingItem.version + 1
         stmt = update(ShoppingItem).where(ShoppingItem.id == item_id).values(**kwargs).returning(ShoppingItem)
@@ -79,3 +89,9 @@ class ItemRepository:
         )
         result = await self.session.execute(stmt)
         return result.scalars().first()
+
+    # Aliases for compatibility
+    get = get_by_id
+    get_by_list_id = get_by_list
+    find_active_by_name = find_duplicate
+

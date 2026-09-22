@@ -14,10 +14,10 @@ class AuthService:
         self.session = session
 
     async def authenticate(self, init_data: str) -> tuple:
-        \"\"\"
+        """
         Validate Telegram initData, get_or_create user. Return (user, is_new).
         Auto-create default shopping list for new users. Update last_seen_at.
-        \"\"\"
+        """
         # Validate init_data (assumes signature validation is done or delegated)
         parsed_data = dict(urllib.parse.parse_qsl(init_data))
         if "user" not in parsed_data:

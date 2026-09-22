@@ -53,8 +53,14 @@ class ListService:
 
     async def check_access(self, user_id: UUID, list_id: UUID, min_role: str = 'viewer') -> Any:
         list_repo = ListRepository(self.session)
+        shopping_list = await list_repo.get_by_id(list_id)
+        if not shopping_list:
+            raise NotFoundError("List not found")
+            
+        if shopping_list.owner_id == user_id:
+            return shopping_list
+
         member = await list_repo.get_member(list_id, user_id)
-        
         if not member:
             raise AuthorizationError("Access denied to this list")
             
@@ -64,10 +70,6 @@ class ListService:
         
         if user_role_level < min_role_level:
             raise AuthorizationError(f"Insufficient permissions. Requires {min_role}")
-            
-        shopping_list = await list_repo.get(list_id)
-        if not shopping_list:
-            raise NotFoundError("List not found")
             
         return shopping_list
 

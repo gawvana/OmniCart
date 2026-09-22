@@ -49,3 +49,8 @@ class ShoppingItem(Base, TimestampMixin):
     purchased_at = Column(DateTime(timezone=True), nullable=True)
     version = Column(Integer, default=1, nullable=False)
     client_mutation_id = Column(String, unique=True, index=True, nullable=True)
+
+    @property
+    def price(self):
+        return self.actual_price or self.estimated_price
+

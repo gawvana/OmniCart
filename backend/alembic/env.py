@@ -5,6 +5,13 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 import os
+import sys
+from pathlib import Path
+
+# Add backend directory to path so `app` can be imported
+backend_dir = Path(__file__).resolve().parents[1]
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
 
 from app.db.base import Base
 import app.models  # noqa

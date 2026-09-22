@@ -31,3 +31,36 @@ class TestPermissions:
         
         with pytest.raises(AuthorizationError):
             await item_svc.delete_item(user2.id, item.id)
+
+    async def test_viewer_cannot_edit_list(self, session, test_user, test_list):
+        from backend.app.repositories.list_repo import ListRepository
+        list_repo = ListRepository(session)
+        user_viewer = User(id=uuid4(), telegram_user_id=888999000, first_name='Viewer', language='ru', currency='UZS')
+        session.add(user_viewer)
+        await session.commit()
+        await list_repo.add_member(test_list.id, user_viewer.id, role="viewer", added_by=test_user.id)
+
+        svc = ListService(session)
+        # Viewer can read (min_role="viewer")
+        await svc.check_access(user_viewer.id, test_list.id, min_role="viewer")
+        
+        # Viewer cannot edit (min_role="editor")
+        with pytest.raises(AuthorizationError):
+            await svc.check_access(user_viewer.id, test_list.id, min_role="editor")
+
+    async def test_removed_member_loses_access(self, session, test_user, test_list):
+        from backend.app.repositories.list_repo import ListRepository
+        list_repo = ListRepository(session)
+        user_member = User(id=uuid4(), telegram_user_id=777888999, first_name='Member', language='ru', currency='UZS')
+        session.add(user_member)
+        await session.commit()
+        await list_repo.add_member(test_list.id, user_member.id, role="editor", added_by=test_user.id)
+
+        svc = ListService(session)
+        await svc.check_access(user_member.id, test_list.id, min_role="editor")
+
+        # Now remove member
+        await list_repo.remove_member(test_list.id, user_member.id)
+        with pytest.raises(AuthorizationError):
+            await svc.check_access(user_member.id, test_list.id, min_role="viewer")
+

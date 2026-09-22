@@ -48,3 +48,7 @@ class BudgetRepository:
         stmt = delete(Budget).where(Budget.id == budget_id)
         await self.session.execute(stmt)
         await self.session.flush()
+
+    get = get_by_id
+    get_active_by_list = get_list_budget
+

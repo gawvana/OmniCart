@@ -1,20 +1,18 @@
 import pytest
 import asyncio
+import sys
 from uuid import uuid4
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+import app.core.exceptions
+sys.modules["backend.app.core.exceptions"] = app.core.exceptions
 from backend.app.db.base import Base
 from backend.app.models import *  # Import all models
 
 # Use SQLite for tests (faster, no Docker needed)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test_omnicart.db"
 
-@pytest.fixture(scope='session')
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 async def engine():
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     async with engine.begin() as conn:

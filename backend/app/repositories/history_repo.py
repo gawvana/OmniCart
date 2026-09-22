@@ -1,5 +1,5 @@
 from uuid import UUID
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime, date
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
@@ -37,6 +37,43 @@ class HistoryRepository:
                 stmt = stmt.where(PurchaseHistory.store_id == filters['store_id'])
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_by_product(self, user_id: UUID, product_id: UUID, limit: int = 20) -> list[PurchaseHistory]:
+        stmt = (
+            select(PurchaseHistory)
+            .where(and_(PurchaseHistory.user_id == user_id, PurchaseHistory.product_id == product_id))
+            .order_by(PurchaseHistory.purchased_at.desc())
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def create_from_item(self, user_id: UUID, item: Any) -> PurchaseHistory:
+        from datetime import timezone
+        history = PurchaseHistory(
+            user_id=user_id,
+            item_name=item.name,
+            product_id=getattr(item, "product_id", None),
+            quantity=item.quantity if hasattr(item, "quantity") and item.quantity is not None else Decimal("1"),
+            unit=getattr(item, "unit", "шт") or "шт",
+            price=getattr(item, "price", None),
+            currency=getattr(item, "currency", "UZS") or "UZS",
+            store_id=getattr(item, "store_id", None),
+            purchased_at=datetime.now(timezone.utc)
+        )
+        self.session.add(history)
+        await self.session.flush()
+        return history
+
+    async def get_paginated_history(self, user_id: UUID, cursor: Optional[str], limit: int, filters: Optional[dict] = None) -> tuple[list[PurchaseHistory], Optional[str], bool]:
+        items = await self.get_user_history(user_id, cursor=cursor, limit=limit + 1, filters=filters)
+        has_more = len(items) > limit
+        if has_more:
+            items = items[:limit]
+            next_cursor = str(items[-1].id)
+        else:
+            next_cursor = None
+        return items, next_cursor, has_more
 
     async def get_product_purchase_dates(self, user_id: UUID, product_id: UUID) -> list[datetime]:
         stmt = select(PurchaseHistory.purchased_at).where(and_(PurchaseHistory.user_id == user_id, PurchaseHistory.product_id == product_id)).order_by(PurchaseHistory.purchased_at.desc())

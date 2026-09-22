@@ -1,6 +1,125 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-export const OnboardingPage = () => {
+import { GlassCard, GlassButton, AppIcon } from '@/design-system';
+
+interface Step {
+  icon: 'sparkles' | 'family' | 'wallet' | 'cart';
+  titleKey: string;
+  defaultTitle: string;
+  descKey: string;
+  defaultDesc: string;
+  badge: string;
+}
+
+const STEPS: Step[] = [
+  {
+    icon: 'sparkles',
+    titleKey: 'onboarding.step1Title',
+    defaultTitle: 'AI-Powered Lists',
+    descKey: 'onboarding.step1Desc',
+    defaultDesc: 'Dictate or paste any recipe or messy text. OmniCart AI instantly parses, categorizes, and estimates prices.',
+    badge: 'Neural Assistant',
+  },
+  {
+    icon: 'family',
+    titleKey: 'onboarding.step2Title',
+    defaultTitle: 'Family Real-Time Sync',
+    descKey: 'onboarding.step2Desc',
+    defaultDesc: 'Invite household members with instant invite links. Check off groceries together in real-time.',
+    badge: 'Multi-User',
+  },
+  {
+    icon: 'wallet',
+    titleKey: 'onboarding.step3Title',
+    defaultTitle: 'Budget & Smart Reorder',
+    descKey: 'onboarding.step3Desc',
+    defaultDesc: 'Set spending limits, get predictive reorder reminders, and stay on top of your shopping budget.',
+    badge: 'Automated',
+  },
+];
+
+export const OnboardingPage: React.FC = () => {
   const { t } = useTranslation();
-  return <div className="p-8 min-h-screen flex flex-col justify-center items-center"><h1 className="text-3xl font-bold mb-4">{t('welcome', 'Welcome')}</h1><button className="px-6 py-3 bg-primary text-white rounded-xl">{t('getStarted', 'Get Started')}</button></div>;
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const step = STEPS[currentStep];
+  const isLast = currentStep === STEPS.length - 1;
+
+  const handleNext = () => {
+    if (isLast) {
+      localStorage.setItem('omnicart_onboarded', 'true');
+      navigate({ to: '/' });
+    } else {
+      setCurrentStep((prev) => prev + 1);
+    }
+  };
+
+  const handleSkip = () => {
+    localStorage.setItem('omnicart_onboarded', 'true');
+    navigate({ to: '/' });
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col justify-between p-6 max-w-md mx-auto">
+      {/* Top Header */}
+      <div className="flex justify-between items-center pt-4">
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+            <AppIcon name="cart" size={20} />
+          </div>
+          <span className="font-bold text-lg text-slate-800 dark:text-white">OmniCart AI</span>
+        </div>
+        {!isLast && (
+          <button
+            onClick={handleSkip}
+            className="text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-200/50 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-300/50 transition-colors"
+          >
+            {t('common.skip', 'Skip')}
+          </button>
+        )}
+      </div>
+
+      {/* Main Content Card */}
+      <div className="my-auto py-8">
+        <GlassCard className="p-8 text-center flex flex-col items-center shadow-xl backdrop-blur-xl border-white/20">
+          <div className="relative mb-6">
+            <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-blue-500/20 to-purple-500/20 border border-white/30 flex items-center justify-center text-blue-500 shadow-inner">
+              <AppIcon name={step.icon} size={48} />
+            </div>
+            <span className="absolute -top-2 -right-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-600 text-white shadow">
+              {step.badge}
+            </span>
+          </div>
+
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-3">
+            {t(step.titleKey, step.defaultTitle)}
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-xs">
+            {t(step.descKey, step.defaultDesc)}
+          </p>
+
+          {/* Dots Indicator */}
+          <div className="flex items-center gap-2 mt-8">
+            {STEPS.map((_, idx) => (
+              <div
+                key={idx}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  idx === currentStep ? 'w-8 bg-blue-500' : 'w-2 bg-slate-300 dark:bg-white/20'
+                }`}
+              />
+            ))}
+          </div>
+        </GlassCard>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="pb-6 flex flex-col gap-3">
+        <GlassButton variant="primary" size="lg" fullWidth onClick={handleNext}>
+          {isLast ? t('onboarding.start', 'Get Started') : t('common.next', 'Continue')}
+        </GlassButton>
+      </div>
+    </div>
+  );
 };

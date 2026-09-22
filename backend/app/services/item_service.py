@@ -86,7 +86,7 @@ class ItemService:
         
         if is_marking_purchased:
             kwargs["purchased_at"] = datetime.now(timezone.utc)
-            kwargs["purchased_by_id"] = user_id
+            kwargs["purchased_by"] = user_id
             
         updated_item = await item_repo.update(item_id, **kwargs)
         

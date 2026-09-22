@@ -79,20 +79,19 @@ class ReorderService:
                 last_purchase = await repo.get_last_purchase_date(user_id, product_id)
                 if not last_purchase:
                     continue
-                    
+                if last_purchase.tzinfo is None:
+                    last_purchase = last_purchase.replace(tzinfo=timezone.utc)
                 next_expected_at = last_purchase + timedelta(days=avg_interval)
                 
-                # If it's expected soon or already overdue
-                if next_expected_at <= now + timedelta(days=2):
-                    event = await repo.create(
-                        user_id=user_id,
-                        product_id=product_id,
-                        expected_interval_days=int(avg_interval),
-                        confidence=confidence,
-                        next_expected_at=next_expected_at,
-                        status="pending"
-                    )
-                    new_events.append(event)
+                event = await repo.create(
+                    user_id=user_id,
+                    product_id=product_id,
+                    expected_interval_days=int(avg_interval),
+                    confidence=confidence,
+                    next_expected_at=next_expected_at,
+                    status="pending"
+                )
+                new_events.append(event)
                     
         logger.info("Calculated reorders", user_id=str(user_id), new_events_count=len(new_events))
         return new_events

@@ -23,6 +23,14 @@ class ProductRepository:
         # Simplistic implementation if alias mapping exists in a separate table, but for now assuming normalized_name check
         return await self.get_by_normalized_name(alias)
 
+    async def find_by_name_or_alias(self, name: str) -> Optional[Product]:
+        product = await self.get_by_normalized_name(name)
+        if product:
+            return product
+        return await self.find_by_alias(name)
+
+    get = get_by_id
+
     async def create(self, name: str, normalized_name: str, category_id: Optional[int], default_unit: str) -> Product:
         product = Product(
             name=name,

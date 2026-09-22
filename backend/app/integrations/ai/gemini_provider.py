@@ -1,15 +1,25 @@
 import time
 import json
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-import google.generativeai as genai
-from google.generativeai.types import generation_types
-from google.api_core.exceptions import GoogleAPIError
+try:
+    import google.generativeai as genai
+    from google.generativeai.types import generation_types
+    from google.api_core.exceptions import GoogleAPIError
+    HAVE_GEMINI = True
+except ImportError:
+    genai = None
+    generation_types = None
+    GoogleAPIError = Exception
+    HAVE_GEMINI = False
+
 from app.integrations.ai.provider import AIProvider, AIResponse
 
 class GeminiProvider(AIProvider):
     provider_name = "gemini"
 
     def __init__(self, api_key: str):
+        if not HAVE_GEMINI:
+            raise ImportError("google-generativeai is not installed")
         genai.configure(api_key=api_key)
 
     @retry(

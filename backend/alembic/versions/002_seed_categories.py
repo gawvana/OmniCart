@@ -16,7 +16,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.execute(
-        \"\"\"
+        """
         INSERT INTO categories (name, emoji, sort_order) VALUES
         ('Овощи и фрукты', '🥬', 1),
         ('Мясо и птица', '🥩', 2),
@@ -31,7 +31,7 @@ def upgrade() -> None:
         ('Бытовая химия', '🧴', 11),
         ('Личная гигиена', '🧼', 12),
         ('Другое', '📦', 13);
-        \"\"\"
+        """
     )
 
 def downgrade() -> None:

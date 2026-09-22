@@ -28,6 +28,11 @@ class BudgetService:
             if not member:
                 raise AuthorizationError("Access denied to the specified list")
                 
+        if "period" not in kwargs or not kwargs["period"]:
+            kwargs["period"] = "monthly"
+        if "spent_amount" not in kwargs or kwargs["spent_amount"] is None:
+            kwargs["spent_amount"] = Decimal("0")
+                
         budget = await budget_repo.create(user_id=user_id, **kwargs)
         logger.info("Budget created", budget_id=str(budget.id), user_id=str(user_id))
         return budget
