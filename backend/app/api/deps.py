@@ -23,7 +23,6 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)):
     init_data = request.headers.get("X-Telegram-Init-Data") or request.headers.get("x-telegram-init-data")
-    auth_header = request.headers.get("Authorization") or ""
     
     # 1. Telegram InitData authentication
     if init_data:
@@ -33,45 +32,30 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
             return user
         except Exception as e:
             logger.warning("Telegram auth failed", error=str(e))
-            
-    # 2. Authorization header / X-User-Id header
-    user_id_val = request.headers.get("X-User-Id")
-    if auth_header.startswith("Bearer "):
-        token = auth_header.replace("Bearer ", "").strip()
-        if not user_id_val:
-            user_id_val = token
-            
-    if user_id_val:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Authentication failed: {str(e)}"
+            )
+
+    # 2. Test-environment explicit bypass (only allowed in test/dev with X-Test-User-Id)
+    test_user_id = request.headers.get("X-Test-User-Id")
+    if test_user_id and getattr(settings, "APP_ENV", "development") in ("test", "testing", "development"):
         try:
             user_repo = UserRepository(db)
-            user = await user_repo.get_by_id(UUID(user_id_val))
+            if test_user_id.isdigit():
+                user = await user_repo.get_by_telegram_id(int(test_user_id))
+            else:
+                user = await user_repo.get_by_id(UUID(test_user_id))
             if user:
                 return user
         except Exception:
             pass
 
-    # 3. Default fallback user for dev/test environments
-    user_repo = UserRepository(db)
-    user = await user_repo.get_by_telegram_id(123456789)
-    if not user:
-        from datetime import datetime, timezone
-        user = await user_repo.create(
-            telegram_id=123456789,
-            first_name="Telegram",
-            last_name="User",
-            username="telegram_user",
-            language_code="ru",
-            last_seen_at=datetime.now(timezone.utc)
-        )
-        list_repo = ListRepository(db)
-        await list_repo.create(
-            owner_id=user.id,
-            name="Мой список",
-            emoji="🛒",
-            color="#4CAF50",
-            is_default=True
-        )
-    return user
+    # 3. Fail closed: no anonymous or synthetic fake user in production
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentication required: missing or invalid Telegram initData"
+    )
 
 def get_redis(request: Request) -> Optional[redis.Redis]:
     return getattr(request.app.state, "redis_client", None)
@@ -115,9 +99,24 @@ async def get_ai_service(
     return AIService(db, ai_router, cache, rate_limiter)
 
 def require_role(min_role: str) -> Callable:
+    role_weights = {"viewer": 1, "editor": 2, "admin": 3, "owner": 4}
     async def role_checker(current_user = Depends(get_current_user)):
+        user_role = getattr(current_user, "role", "viewer")
+        is_admin = getattr(current_user, "is_admin", False)
+        if not is_admin and role_weights.get(user_role, 1) < role_weights.get(min_role, 1):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Permission denied: action requires role '{min_role}'"
+            )
         return current_user
     return role_checker
 
 async def get_current_admin(current_user = Depends(get_current_user)):
-    return current_user
+    is_admin = getattr(current_user, "is_admin", False) or getattr(current_user, "role", "") == "admin"
+    admin_tg_ids = getattr(settings, "ADMIN_TELEGRAM_IDS", [])
+    if is_admin or (getattr(current_user, "telegram_user_id", None) in admin_tg_ids):
+        return current_user
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Admin access required"
+    )

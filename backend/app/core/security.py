@@ -16,7 +16,7 @@ class TelegramUser(BaseModel):
     language_code: str | None = None
     is_premium: bool | None = None
 
-def validate_telegram_init_data(init_data: str, bot_token: str) -> TelegramUser:
+def validate_telegram_init_data(init_data: str, bot_token: str, max_age: int = 3600) -> TelegramUser:
     try:
         parsed_data = dict(parse_qsl(init_data))
         if "hash" not in parsed_data:
@@ -34,15 +34,32 @@ def validate_telegram_init_data(init_data: str, bot_token: str) -> TelegramUser:
         if computed_hash != hash_value:
             raise AuthenticationError(message="Invalid hash")
             
-        auth_date = int(parsed_data.get("auth_date", 0))
-        if (datetime.now(timezone.utc).timestamp() - auth_date) > 3600:
+        auth_date_raw = parsed_data.get("auth_date")
+        if not auth_date_raw:
+            raise AuthenticationError(message="Missing auth_date in init data")
+        try:
+            auth_date = int(auth_date_raw)
+        except ValueError:
+            raise AuthenticationError(message="Invalid auth_date format")
+            
+        now_ts = datetime.now(timezone.utc).timestamp()
+        if auth_date > now_ts + 60:
+            raise AuthenticationError(message="Init data auth_date is in the future")
+        if (now_ts - auth_date) > max_age:
             raise AuthenticationError(message="Init data expired")
             
         user_json = parsed_data.get("user")
         if not user_json:
             raise AuthenticationError(message="User data missing")
             
-        user_data = json.loads(user_json)
+        try:
+            user_data = json.loads(user_json)
+        except Exception:
+            raise AuthenticationError(message="Malformed user JSON in init data")
+            
+        if not isinstance(user_data, dict) or not user_data.get("id"):
+            raise AuthenticationError(message="Missing user id in init data")
+            
         return TelegramUser(**user_data)
         
     except Exception as e:

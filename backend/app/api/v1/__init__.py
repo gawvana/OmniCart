@@ -18,6 +18,7 @@ from app.api.v1.search import router as search_router
 from app.api.v1.market import router as market_router
 from app.api.v1.websocket import router as websocket_router
 from app.api.v1.admin import router as admin_router
+from app.api.v1.webhook import router as webhook_router
 
 router = APIRouter()
 router.include_router(auth_router, prefix="/auth", tags=["Auth"])
@@ -39,3 +40,4 @@ router.include_router(search_router, prefix="/search", tags=["Search"])
 router.include_router(market_router, prefix="/market", tags=["Market"])
 router.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
 router.include_router(admin_router, prefix="/admin", tags=["Admin"])
+router.include_router(webhook_router, prefix="/bot", tags=["Bot"])

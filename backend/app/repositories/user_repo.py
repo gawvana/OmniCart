@@ -19,13 +19,28 @@ class UserRepository:
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
-    async def create(self, telegram_user_id: int, username: Optional[str], first_name: str, last_name: Optional[str], language: str) -> User:
+    async def create(
+        self,
+        telegram_user_id: Optional[int] = None,
+        username: Optional[str] = None,
+        first_name: str = "",
+        last_name: Optional[str] = None,
+        language: str = "ru",
+        telegram_id: Optional[int] = None,
+        language_code: Optional[str] = None,
+        **kwargs
+    ) -> User:
+        tg_id = telegram_user_id if telegram_user_id is not None else telegram_id
+        if tg_id is None:
+            raise ValueError("telegram_user_id is required")
+        lang = language_code or language or "ru"
         user = User(
-            telegram_user_id=telegram_user_id,
+            telegram_user_id=tg_id,
             username=username,
             first_name=first_name,
             last_name=last_name,
-            language=language
+            language=lang,
+            **{k: v for k, v in kwargs.items() if hasattr(User, k)}
         )
         self.session.add(user)
         await self.session.flush()
@@ -38,18 +53,18 @@ class UserRepository:
         return result.scalars().first()
 
     async def get_settings(self, user_id: UUID) -> Optional[UserSettings]:
-        stmt = select(UserSettings).where(UserSettings.id == user_id)
+        stmt = select(UserSettings).where(UserSettings.user_id == user_id)
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
     async def create_settings(self, user_id: UUID, **kwargs) -> UserSettings:
-        settings = UserSettings(id=user_id, **kwargs)
+        settings = UserSettings(user_id=user_id, **kwargs)
         self.session.add(settings)
         await self.session.flush()
         return settings
 
     async def update_settings(self, user_id: UUID, **kwargs) -> UserSettings:
-        stmt = update(UserSettings).where(UserSettings.id == user_id).values(**kwargs).returning(UserSettings)
+        stmt = update(UserSettings).where(UserSettings.user_id == user_id).values(**kwargs).returning(UserSettings)
         result = await self.session.execute(stmt)
         await self.session.flush()
         return result.scalars().first()

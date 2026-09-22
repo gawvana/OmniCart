@@ -4,14 +4,15 @@
   "installCommand": "npm install",
   "framework": "vite",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://omnicart-backend.onrender.com/api/:path*" }
+    { "source": "/api/:path*", "destination": "https://omnicart-backend.onrender.com/api/:path*" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Content-Security-Policy", "value": "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org https://telegram.org;" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
       ]
     }

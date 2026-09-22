@@ -5,8 +5,8 @@ from datetime import datetime, timedelta, timezone
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories.family_repository import FamilyRepository
-from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
+from app.repositories.family_repo import FamilyRepository
+from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError, ConflictError
 
 logger = structlog.get_logger(__name__)
 
@@ -69,8 +69,12 @@ class FamilyService:
         if existing_member:
             raise ValidationError("You are already a member of this family")
             
+        # Atomically claim invite to prevent race conditions
+        claimed = await family_repo.use_invite(invite.id, used_by_id=user_id)
+        if not claimed:
+            raise ConflictError("Invite has already been used or claimed")
+            
         member = await family_repo.add_member(invite.family_id, user_id, role="member")
-        await family_repo.mark_invite_used(invite.id, used_by_id=user_id)
         
         await self.log_activity(
             family_id=invite.family_id,

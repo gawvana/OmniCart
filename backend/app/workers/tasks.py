@@ -55,6 +55,7 @@ async def process_recurring_items(ctx):
                 body=f'Вы обычно покупаете каждые {item.interval_days} дней',
                 data={'recurring_item_id': str(item.id), 'name': item.name}
             )
+            item.next_due_at = now + timedelta(days=item.interval_days or 7)
         
         await session.commit()
         logger.info('processed_recurring', count=len(due_items))
@@ -89,14 +90,14 @@ async def send_notifications(ctx):
         from app.models.user import User
         from app.bot.bot import create_bot
         
-        # Find unread notifications created in the last hour
+        # Find unsent notifications created in the last hour
         cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
         result = await session.execute(
             select(Notification, User.telegram_user_id)
             .join(User, Notification.user_id == User.id)
             .where(
                 and_(
-                    Notification.is_read == False,
+                    Notification.is_sent == False,
                     Notification.created_at >= cutoff
                 )
             )
@@ -109,6 +110,7 @@ async def send_notifications(ctx):
         
         bot = create_bot()
         sent = 0
+        now_utc = datetime.now(timezone.utc)
         try:
             for notification, telegram_id in notifications:
                 try:
@@ -116,9 +118,12 @@ async def send_notifications(ctx):
                         chat_id=telegram_id,
                         text=f"{notification.title}\n\n{notification.body}"
                     )
+                    notification.is_sent = True
+                    notification.sent_at = now_utc
                     sent += 1
                 except Exception as e:
                     logger.warning('notification_send_failed', telegram_id=telegram_id, error=str(e))
+            await session.commit()
         finally:
             await bot.session.close()
         

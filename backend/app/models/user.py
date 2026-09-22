@@ -19,6 +19,8 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
     currency = Column(String, default="UZS", nullable=False)
     last_seen_at = Column(String, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
+    is_admin = Column(Boolean, default=False, nullable=False)
+    role = Column(String, default="user", nullable=False)
 
 class UserSettings(Base, TimestampMixin):
     __tablename__ = "user_settings"

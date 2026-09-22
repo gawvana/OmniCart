@@ -76,6 +76,11 @@ class ListService:
     async def share_list(self, user_id: UUID, list_id: UUID, target_user_id: UUID, role: str) -> Any:
         await self.check_access(user_id, list_id, min_role="admin")
         list_repo = ListRepository(self.session)
-        member = await list_repo.add_member(list_id, target_user_id, role)
+        member = await list_repo.add_member(list_id, target_user_id, role, added_by=user_id)
         logger.info("Shopping list shared", list_id=str(list_id), target_user_id=str(target_user_id), role=role)
         return member
+
+    async def get_list(self, user_id: UUID, list_id: UUID) -> Any:
+        return await self.check_access(user_id, list_id, min_role="viewer")
+
+    add_member = share_list

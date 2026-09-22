@@ -68,11 +68,16 @@ class FamilyRepository:
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
-    async def use_invite(self, invite_id: UUID, user_id: Optional[UUID] = None, used_by_id: Optional[UUID] = None) -> None:
+    async def use_invite(self, invite_id: UUID, user_id: Optional[UUID] = None, used_by_id: Optional[UUID] = None) -> bool:
         user = user_id or used_by_id
-        stmt = update(FamilyInvite).where(FamilyInvite.id == invite_id).values(is_used=True, accepted_by=user, accepted_at=datetime.now(timezone.utc))
-        await self.session.execute(stmt)
+        stmt = (
+            update(FamilyInvite)
+            .where(and_(FamilyInvite.id == invite_id, FamilyInvite.is_used == False))
+            .values(is_used=True, accepted_by=user, accepted_at=datetime.now(timezone.utc))
+        )
+        result = await self.session.execute(stmt)
         await self.session.flush()
+        return bool(result.rowcount and result.rowcount > 0)
 
     mark_invite_used = use_invite
     get_user_families_with_counts = get_user_families

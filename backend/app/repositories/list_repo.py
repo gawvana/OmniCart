@@ -69,7 +69,7 @@ class ListRepository:
 
     get = get_by_id
 
-    async def add_member(self, list_id: UUID, user_id: UUID, role: str, added_by: Optional[UUID]) -> ShoppingListMember:
+    async def add_member(self, list_id: UUID, user_id: UUID, role: str, added_by: Optional[UUID] = None) -> ShoppingListMember:
         member = ShoppingListMember(
             list_id=list_id,
             user_id=user_id,

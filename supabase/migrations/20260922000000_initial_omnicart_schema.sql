@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS public.users (
     currency TEXT NOT NULL DEFAULT 'UZS',
     last_seen_at TIMESTAMPTZ,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+    role TEXT NOT NULL DEFAULT 'user',
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
     deleted_at TIMESTAMPTZ
@@ -308,9 +310,12 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     body TEXT NOT NULL,
     data JSONB NOT NULL DEFAULT '{}'::jsonb,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    is_sent BOOLEAN NOT NULL DEFAULT FALSE,
+    sent_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 CREATE INDEX IF NOT EXISTS ix_notifications_user ON public.notifications(user_id, is_read);
+CREATE INDEX IF NOT EXISTS ix_notifications_pending ON public.notifications(user_id, is_sent);
 
 -- 22. Reminders
 CREATE TABLE IF NOT EXISTS public.reminders (
@@ -418,7 +423,9 @@ CREATE POLICY users_select ON public.users
     FOR SELECT USING (id = public.current_app_user_id());
 
 CREATE POLICY users_insert ON public.users
-    FOR INSERT WITH CHECK (id = public.current_app_user_id() OR auth.uid()::text IS NOT NULL);
+    FOR INSERT WITH CHECK (
+        (select auth.uid()) = id OR (select auth.role()) = 'service_role' OR (select auth.uid()) IS NULL
+    );
 
 CREATE POLICY users_update ON public.users
     FOR UPDATE USING (id = public.current_app_user_id());

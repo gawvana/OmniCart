@@ -1,15 +1,39 @@
 import { ApiError } from '../types';
 
-const BASE_URL = '/api';
+const ENV_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const BASE_URL = ENV_BASE ? (ENV_BASE.includes('/api/v1') ? ENV_BASE : `${ENV_BASE}/api/v1`) : '/api/v1';
 
 export interface ApiClientOptions extends Omit<RequestInit, 'body'> {
   body?: any;
   params?: Record<string, any>;
 }
 
+function normalizeData(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(normalizeData);
+  }
+  if (obj !== null && typeof obj === 'object' && !(obj instanceof Date) && !(obj instanceof Blob)) {
+    const res: any = {};
+    for (const key of Object.keys(obj)) {
+      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+      const val = normalizeData(obj[key]);
+      res[key] = val;
+      if (camelKey !== key && res[camelKey] === undefined) {
+        res[camelKey] = val;
+      }
+    }
+    if (res.note !== undefined && res.notes === undefined) res.notes = res.note;
+    if (res.estimatedPrice !== undefined && res.price === undefined) res.price = res.estimatedPrice;
+    return res;
+  }
+  return obj;
+}
+
 export async function apiClient<T>(endpoint: string, options: ApiClientOptions = {}): Promise<T> {
   const { body, params, ...customConfig } = options;
-  let url = `${BASE_URL}${endpoint}`;
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  let url = cleanEndpoint.startsWith('/api/v1') ? cleanEndpoint : `${BASE_URL}${cleanEndpoint}`;
+  
   if (params) {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, val]) => {
@@ -50,17 +74,19 @@ export async function apiClient<T>(endpoint: string, options: ApiClientOptions =
     clearTimeout(timeoutId);
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      const errObj = typeof errorData.error === 'object' && errorData.error !== null ? errorData.error : null;
       throw {
-        error: errorData.error || 'Request failed',
-        code: errorData.code || response.status.toString(),
-        details: errorData.details,
+        error: errObj?.message || (typeof errorData.error === 'string' ? errorData.error : (typeof errorData.detail === 'string' ? errorData.detail : 'Request failed')),
+        code: errObj?.code || errorData.code || response.status.toString(),
+        details: errObj?.details || errorData.details,
       } as ApiError;
     }
     if (response.status === 204) {
       return undefined as unknown as T;
     }
     const data = await response.json();
-    return data.data !== undefined ? data.data : data;
+    const payload = data && data.data !== undefined ? data.data : data;
+    return normalizeData(payload) as T;
   } catch (error) {
     clearTimeout(timeoutId);
     if ((error as Error).name === 'AbortError') {

@@ -72,6 +72,13 @@ class AuthService:
                 is_default=True
             )
             
+            # Auto-create default user settings
+            await user_repo.create_settings(
+                user_id=user.id,
+                language=tg_user.get("language_code", "ru") or "ru",
+                theme="auto"
+            )
+            
             logger.info("New user registered", user_id=str(user.id), telegram_id=tg_id)
         else:
             # Update last_seen_at

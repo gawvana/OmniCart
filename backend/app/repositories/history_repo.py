@@ -27,7 +27,31 @@ class HistoryRepository:
         return history
 
     async def get_user_history(self, user_id: UUID, cursor: Optional[str], limit: int, filters: Optional[dict]) -> list[PurchaseHistory]:
-        stmt = select(PurchaseHistory).where(PurchaseHistory.user_id == user_id).order_by(PurchaseHistory.purchased_at.desc()).limit(limit)
+        stmt = (
+            select(PurchaseHistory)
+            .where(PurchaseHistory.user_id == user_id)
+            .order_by(PurchaseHistory.purchased_at.desc(), PurchaseHistory.id.desc())
+        )
+        if cursor:
+            try:
+                if "|" in cursor:
+                    dt_str, id_str = cursor.split("|", 1)
+                    cursor_dt = datetime.fromisoformat(dt_str)
+                    cursor_id = UUID(id_str)
+                    stmt = stmt.where(
+                        (PurchaseHistory.purchased_at < cursor_dt) |
+                        ((PurchaseHistory.purchased_at == cursor_dt) & (PurchaseHistory.id < cursor_id))
+                    )
+                else:
+                    cursor_item = await self.session.get(PurchaseHistory, UUID(cursor))
+                    if cursor_item:
+                        stmt = stmt.where(
+                            (PurchaseHistory.purchased_at < cursor_item.purchased_at) |
+                            ((PurchaseHistory.purchased_at == cursor_item.purchased_at) & (PurchaseHistory.id < cursor_item.id))
+                        )
+            except Exception:
+                pass
+
         if filters:
             if filters.get('start_date'):
                 stmt = stmt.where(PurchaseHistory.purchased_at >= filters['start_date'])
@@ -35,6 +59,7 @@ class HistoryRepository:
                 stmt = stmt.where(PurchaseHistory.purchased_at <= filters['end_date'])
             if filters.get('store_id'):
                 stmt = stmt.where(PurchaseHistory.store_id == filters['store_id'])
+        stmt = stmt.limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
@@ -42,7 +67,7 @@ class HistoryRepository:
         stmt = (
             select(PurchaseHistory)
             .where(and_(PurchaseHistory.user_id == user_id, PurchaseHistory.product_id == product_id))
-            .order_by(PurchaseHistory.purchased_at.desc())
+            .order_by(PurchaseHistory.purchased_at.desc(), PurchaseHistory.id.desc())
             .limit(limit)
         )
         result = await self.session.execute(stmt)
@@ -70,7 +95,8 @@ class HistoryRepository:
         has_more = len(items) > limit
         if has_more:
             items = items[:limit]
-            next_cursor = str(items[-1].id)
+            last_item = items[-1]
+            next_cursor = f"{last_item.purchased_at.isoformat()}|{last_item.id}"
         else:
             next_cursor = None
         return items, next_cursor, has_more

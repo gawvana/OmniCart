@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     TELEGRAM_WEBAPP_URL: str = "https://frontend-umber-seven-66.vercel.app"
     TELEGRAM_WEBHOOK_SECRET: str = "omnicart-webhook-secret-token-2026"
     BOT_MODE: str = "polling"
+    ADMIN_TELEGRAM_IDS: List[int] = []
 
     DATABASE_URL: str = "sqlite+aiosqlite:///./omnicart.db"
     REDIS_URL: str = "redis://localhost:6379/0"
