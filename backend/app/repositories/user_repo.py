@@ -10,12 +10,12 @@ class UserRepository:
         self.session = session
 
     async def get_by_id(self, user_id: UUID) -> Optional[User]:
-        stmt = select(User).where(User.id == user_id, User.is_deleted == False)
+        stmt = select(User).where(User.id == user_id, User.deleted_at.is_(None))
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
     async def get_by_telegram_id(self, telegram_id: int) -> Optional[User]:
-        stmt = select(User).where(User.telegram_user_id == telegram_id, User.is_deleted == False)
+        stmt = select(User).where(User.telegram_user_id == telegram_id, User.deleted_at.is_(None))
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
@@ -70,7 +70,7 @@ class UserRepository:
         return result.scalars().first()
 
     async def soft_delete(self, user_id: UUID) -> None:
-        stmt = update(User).where(User.id == user_id).values(is_deleted=True)
+        stmt = update(User).where(User.id == user_id).values(deleted_at=datetime.now(timezone.utc), is_active=False)
         await self.session.execute(stmt)
         await self.session.flush()
 
