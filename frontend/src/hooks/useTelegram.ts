@@ -130,6 +130,18 @@ export function useTelegram() {
     } catch (e) {}
   }
 
+  const openTelegramLink = useCallback((url: string) => {
+    try {
+      if (webApp?.openTelegramLink) {
+        webApp.openTelegramLink(url);
+      } else {
+        window.open(url, '_blank');
+      }
+    } catch (e) {
+      window.open(url, '_blank');
+    }
+  }, [webApp]);
+
   return {
     isReady,
     isTelegram,
@@ -140,6 +152,7 @@ export function useTelegram() {
     themeParams: webApp?.themeParams || {},
     expand,
     close,
+    openTelegramLink,
     showBackButton,
     hideBackButton,
     showMainButton,

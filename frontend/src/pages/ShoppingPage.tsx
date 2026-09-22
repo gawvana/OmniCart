@@ -6,6 +6,7 @@ import { AddItemInput, AddItemData } from '../features/shopping/AddItemInput';
 import { CategorySection } from '../features/shopping/CategorySection';
 import { CompletedSection } from '../features/shopping/CompletedSection';
 import { TotalBar } from '../features/shopping/TotalBar';
+import { FamilyShareModal } from '../features/family/FamilyShareModal';
 import { ShoppingItem as IShoppingItem } from '../types';
 import { aiApi } from '../api/ai';
 import { AppIcon } from '@/design-system/icons/AppIcon';
@@ -22,6 +23,7 @@ export const ShoppingPage = ({ listId = 'default' }: { listId?: string }) => {
 
   const [isAiParsing, setIsAiParsing] = useState(false);
   const [storeMode, setStoreMode] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
   // Undo state
@@ -156,19 +158,30 @@ export const ShoppingPage = ({ listId = 'default' }: { listId?: string }) => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setStoreMode(!storeMode)}
-          className={cn(
-            'px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all select-none',
-            storeMode
-              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-950/40'
-              : 'liquid-glass-subtle border border-white/10 text-slate-300 hover:border-white/20'
-          )}
-        >
-          <AppIcon name="store" size={14} />
-          <span>{storeMode ? 'В магазине' : 'Режим покупок'}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowShareModal(true)}
+            className="p-1.5 rounded-xl liquid-glass-subtle border border-white/10 text-slate-300 hover:text-white hover:border-white/20 transition-all select-none"
+            title="Семейный доступ"
+          >
+            <AppIcon name="family" size={15} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStoreMode(!storeMode)}
+            className={cn(
+              'px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all select-none',
+              storeMode
+                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-950/40'
+                : 'liquid-glass-subtle border border-white/10 text-slate-300 hover:border-white/20'
+            )}
+          >
+            <AppIcon name="store" size={14} />
+            <span>{storeMode ? 'В магазине' : 'Режим покупок'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Input */}
@@ -260,6 +273,12 @@ export const ShoppingPage = ({ listId = 'default' }: { listId?: string }) => {
 
       {/* Sticky Bottom Total Bar */}
       <TotalBar items={items} />
+
+      {/* Family Share Modal */}
+      <FamilyShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+      />
     </div>
   );
 };
