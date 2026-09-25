@@ -50,11 +50,13 @@ function formatItem(raw: any) {
     purchased_at: raw.purchased_at || null,
     createdAt: raw.created_at,
     created_at: raw.created_at,
+    updatedAt: raw.updated_at,
+    updated_at: raw.updated_at,
   };
 }
 
 async function verifyTelegram(initData: string): Promise<any | null> {
-  if (!initData) return null;
+  if (!initData || !BOT_TOKEN) return null;
   try {
     const params = new URLSearchParams(initData);
     const hash = params.get("hash");
@@ -172,6 +174,13 @@ async function resolveDefaultListId(userId: string): Promise<string> {
   return defaultList.id;
 }
 
+function jsonResponse(data: any, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -203,46 +212,27 @@ serve(async (req: Request) => {
     }
   }
 
-  // Fallback to existing user in DB
-  if (!currentUser) {
-    const { data: firstUser } = await supabase
-      .from("users")
-      .select("*")
-      .limit(1)
-      .maybeSingle();
-
-    if (firstUser) {
-      currentUser = firstUser;
-    } else {
-      currentUser = await getOrCreateUser({ id: 8883474728, first_name: "Пользователь", username: "SerkovMark" });
-    }
-  }
-
   try {
-    // 1. Health Probe
+    // 1. Health Probe — no auth required
     if (pathname === "/health" || pathname === "/health/live" || pathname === "/health/ready") {
-      return new Response(JSON.stringify({ status: "healthy", database: "connected", timestamp: new Date().toISOString() }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ status: "healthy", database: "connected", timestamp: new Date().toISOString() });
     }
 
-    // 2. Telegram Auth
+    // 2. Telegram Auth — no auth required
     if (pathname === "/auth/telegram" && req.method === "POST") {
       const body = await req.json().catch(() => ({}));
       const initData = body.initData || initDataHeader;
       const tgUser = await verifyTelegram(initData);
       if (!tgUser) {
-        return new Response(JSON.stringify({ error: "Invalid initData" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse({ error: "Invalid initData" }, 401);
       }
       const user = await getOrCreateUser(tgUser);
-      return new Response(JSON.stringify({ authenticated: true, user, token: "supabase-session" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ authenticated: true, user, token: "supabase-session" });
+    }
+
+    // All other routes require authentication
+    if (!currentUser) {
+      return jsonResponse({ error: "Authentication required: missing or invalid Telegram initData" }, 401);
     }
 
     // 3. User Profile
@@ -258,7 +248,7 @@ serve(async (req: Request) => {
         .select("*", { count: "exact", head: true })
         .eq("is_purchased", true);
 
-      return new Response(JSON.stringify({
+      return jsonResponse({
         user: {
           id: currentUser.id,
           first_name: currentUser.first_name,
@@ -271,9 +261,6 @@ serve(async (req: Request) => {
           purchases_count: purchasesCount || 0,
           total_spent: 0,
         }
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -288,10 +275,7 @@ serve(async (req: Request) => {
           .order("created_at", { ascending: false });
 
         if (error) throw error;
-        return new Response(JSON.stringify(lists || []), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse(lists || []);
       }
 
       if (req.method === "POST") {
@@ -309,14 +293,42 @@ serve(async (req: Request) => {
           .single();
 
         if (error) throw error;
-        return new Response(JSON.stringify(newList), {
-          status: 201,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse(newList, 201);
       }
     }
 
-    // 5. Items by List: /items/:listId (supports UUID or 'default')
+    // Single list PATCH/DELETE: /lists/:listId
+    const listItemMatch = pathname.match(/^\/lists\/([a-zA-Z0-9\-_]+)$/);
+    if (listItemMatch) {
+      const listId = listItemMatch[1];
+      if (req.method === "PATCH") {
+        const body = await req.json();
+        const updatePayload: any = {};
+        if (body.name !== undefined) updatePayload.name = body.name;
+        if (body.emoji !== undefined) updatePayload.emoji = body.emoji;
+        if (body.color !== undefined) updatePayload.color = body.color;
+        if (body.is_default !== undefined) updatePayload.is_default = body.is_default;
+        const { data: updated, error } = await supabase
+          .from("shopping_lists")
+          .update(updatePayload)
+          .eq("id", listId)
+          .eq("owner_id", currentUser.id)
+          .select("*")
+          .single();
+        if (error) throw error;
+        return jsonResponse(updated);
+      }
+      if (req.method === "DELETE") {
+        await supabase
+          .from("shopping_lists")
+          .update({ deleted_at: new Date().toISOString() })
+          .eq("id", listId)
+          .eq("owner_id", currentUser.id);
+        return jsonResponse({ success: true });
+      }
+    }
+
+    // 5. Items by List: /items/:listId
     const itemsListMatch = pathname.match(/^\/items\/([a-zA-Z0-9\-_]+)$/);
     if (itemsListMatch) {
       let targetListId = itemsListMatch[1];
@@ -334,10 +346,7 @@ serve(async (req: Request) => {
 
         if (error) throw error;
         const formatted = (items || []).map(formatItem);
-        return new Response(JSON.stringify(formatted), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse(formatted);
       }
 
       if (req.method === "POST") {
@@ -355,15 +364,13 @@ serve(async (req: Request) => {
             priority: body.priority || 1,
             currency: body.currency || "UZS",
             is_purchased: false,
+            created_by: currentUser.id,
           })
           .select("*")
           .single();
 
         if (error) throw error;
-        return new Response(JSON.stringify(formatItem(newItem)), {
-          status: 201,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse(formatItem(newItem), 201);
       }
     }
 
@@ -383,16 +390,14 @@ serve(async (req: Request) => {
         .update({
           is_purchased: newPurchased,
           purchased_at: newPurchased ? new Date().toISOString() : null,
+          purchased_by: newPurchased ? currentUser.id : null,
         })
         .eq("id", itemId)
         .select("*")
         .single();
 
       if (error) throw error;
-      return new Response(JSON.stringify(formatItem(updated)), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(formatItem(updated));
     }
 
     // 7. Single Item Update / Delete: /items/:itemId
@@ -412,6 +417,7 @@ serve(async (req: Request) => {
         if (body.is_purchased !== undefined) updatePayload.is_purchased = body.is_purchased;
         if (body.notes !== undefined) updatePayload.note = body.notes;
         if (body.note !== undefined) updatePayload.note = body.note;
+        if (body.priority !== undefined) updatePayload.priority = body.priority;
 
         const { data: updated, error } = await supabase
           .from("shopping_items")
@@ -421,10 +427,7 @@ serve(async (req: Request) => {
           .single();
 
         if (error) throw error;
-        return new Response(JSON.stringify(formatItem(updated)), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse(formatItem(updated));
       }
 
       if (req.method === "DELETE") {
@@ -433,70 +436,103 @@ serve(async (req: Request) => {
           .update({ deleted_at: new Date().toISOString() })
           .eq("id", itemId);
 
-        return new Response(JSON.stringify({ success: true }), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse({ success: true });
       }
     }
 
     // 8. Budget
     if (pathname.startsWith("/budget")) {
-      const { data: budgets } = await supabase
-        .from("budgets")
-        .select("*")
-        .eq("user_id", currentUser.id);
-      return new Response(JSON.stringify(budgets || []), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (req.method === "GET") {
+        const { data: budgets } = await supabase
+          .from("budgets")
+          .select("*")
+          .eq("user_id", currentUser.id);
+        return jsonResponse(budgets || []);
+      }
+      if (req.method === "POST") {
+        const body = await req.json();
+        const { data: budget, error } = await supabase
+          .from("budgets")
+          .upsert({ user_id: currentUser.id, ...body })
+          .select("*")
+          .single();
+        if (error) throw error;
+        return jsonResponse(budget, 201);
+      }
     }
 
-    // 9. Analytics
+    // 9. Analytics — aggregate real data
     if (pathname.startsWith("/analytics")) {
-      return new Response(JSON.stringify({
-        total_spent: 0,
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: purchasedItems } = await supabase
+        .from("shopping_items")
+        .select("estimated_price, category, purchased_at, name")
+        .eq("is_purchased", true)
+        .gte("purchased_at", thirtyDaysAgo)
+        .order("purchased_at", { ascending: false })
+        .limit(200);
+
+      const items = purchasedItems || [];
+      const totalSpent = items.reduce((sum: number, item: any) => sum + (Number(item.estimated_price) || 0), 0);
+
+      const categoryMap: Record<string, number> = {};
+      for (const item of items) {
+        const cat = item.category || "Другое";
+        categoryMap[cat] = (categoryMap[cat] || 0) + (Number(item.estimated_price) || 0);
+      }
+      const categories = Object.entries(categoryMap).map(([name, amount]) => ({ name, amount }));
+
+      const dailyMap: Record<string, number> = {};
+      for (const item of items) {
+        if (item.purchased_at) {
+          const day = item.purchased_at.substring(0, 10);
+          dailyMap[day] = (dailyMap[day] || 0) + (Number(item.estimated_price) || 0);
+        }
+      }
+      const daily_spending = Object.entries(dailyMap)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, amount]) => ({ date, amount }));
+
+      return jsonResponse({
+        total_spent: totalSpent,
         period: "30d",
-        categories: [],
-        daily_spending: [],
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        categories,
+        daily_spending,
+        items_count: items.length,
       });
     }
 
     // 10. Family
     if (pathname.startsWith("/family")) {
-      return new Response(JSON.stringify({
+      return jsonResponse({
         family: null,
         members: [],
         activity: [],
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // 11. Recurring
     if (pathname.startsWith("/recurring")) {
-      return new Response(JSON.stringify([]), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (req.method === "GET") {
+        const { data: items } = await supabase
+          .from("recurring_items")
+          .select("*")
+          .eq("created_by", currentUser.id)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false });
+        return jsonResponse(items || []);
+      }
     }
 
-    // 12. History
+    // 12. History — purchased items (not just cleared items)
     if (pathname.startsWith("/history")) {
       const { data: history } = await supabase
         .from("shopping_items")
-        .select("*")
+        .select("*, shopping_lists(name)")
         .eq("is_purchased", true)
         .order("purchased_at", { ascending: false })
-        .limit(50);
-      return new Response(JSON.stringify((history || []).map(formatItem)), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+        .limit(100);
+      return jsonResponse((history || []).map(formatItem));
     }
 
     // 13. Settings
@@ -507,10 +543,7 @@ serve(async (req: Request) => {
           .select("*")
           .eq("user_id", currentUser.id)
           .maybeSingle();
-        return new Response(JSON.stringify(settings || { theme: "auto", language: "ru", currency: "UZS" }), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse(settings || { theme: "auto", language: "ru", currency: "UZS" });
       }
       if (req.method === "PATCH") {
         const body = await req.json();
@@ -519,17 +552,54 @@ serve(async (req: Request) => {
           .upsert({ user_id: currentUser.id, ...body })
           .select("*")
           .single();
-        return new Response(JSON.stringify(updated), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse(updated);
       }
     }
 
-    // 14. AI Parse with Groq
+    // 14. Favorites
+    if (pathname === "/favorites") {
+      if (req.method === "GET") {
+        const { data: favs } = await supabase
+          .from("favorites")
+          .select("*, products(name, category_id)")
+          .eq("user_id", currentUser.id);
+        return jsonResponse(favs || []);
+      }
+    }
+
+    // 15. Search
+    if (pathname === "/search" && req.method === "GET") {
+      const q = url.searchParams.get("q") || "";
+      if (!q) return jsonResponse([]);
+      const { data: results } = await supabase
+        .from("products")
+        .select("id, name, category_id")
+        .ilike("name", `%${q}%`)
+        .limit(20);
+      return jsonResponse(results || []);
+    }
+
+    // 16. Notifications
+    if (pathname === "/notifications") {
+      if (req.method === "GET") {
+        const { data: notifs } = await supabase
+          .from("notifications")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .order("created_at", { ascending: false })
+          .limit(30);
+        return jsonResponse(notifs || []);
+      }
+    }
+
+    // 17. AI Parse with Groq
     if (pathname === "/ai/parse" && req.method === "POST") {
       const body = await req.json();
       const promptText = body.text || body.prompt || "";
+
+      if (!GROQ_API_KEY) {
+        return jsonResponse({ items: [{ name: promptText, quantity: 1, unit: "шт", category: "Другое" }] });
+      }
 
       const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -538,15 +608,16 @@ serve(async (req: Request) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "openai/gpt-oss-20b",
+          model: "llama-3.1-8b-instant",
           messages: [
             {
               role: "system",
-              content: "You are an AI grocery parser. Output ONLY a valid JSON array of objects with keys: name (string in original language), quantity (number), unit (string), price (number or null), category (string). No markdown, no explanations.",
+              content: "You are an AI grocery parser for Uzbekistan/Russia. Output ONLY a valid JSON array of objects with keys: name (string in original language), quantity (number), unit (string like шт/кг/л/пак), price (number or null), category (string in Russian). No markdown, no explanations, only JSON array.",
             },
             { role: "user", content: promptText },
           ],
           temperature: 0.1,
+          max_tokens: 500,
         }),
       });
 
@@ -554,27 +625,62 @@ serve(async (req: Request) => {
       const content = groqData.choices?.[0]?.message?.content || "[]";
       let parsed = [];
       try {
-        parsed = JSON.parse(content);
+        // Try to extract JSON array from response
+        const match = content.match(/\[[\s\S]*\]/);
+        parsed = match ? JSON.parse(match[0]) : JSON.parse(content);
       } catch {
-        parsed = [{ name: promptText, quantity: 1, unit: "шт" }];
+        parsed = [{ name: promptText, quantity: 1, unit: "шт", category: "Другое" }];
       }
 
-      return new Response(JSON.stringify({ items: parsed }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return jsonResponse({ items: parsed });
+    }
+
+    // 18. AI Plan
+    if (pathname === "/ai/plan" && req.method === "POST") {
+      const body = await req.json();
+      const { days = 7, people = 2, budget, preferences } = body;
+
+      if (!GROQ_API_KEY) {
+        return jsonResponse({
+          plan_name: `План на ${days} дней`,
+          total_estimated_cost: null,
+          categories: [
+            { name: "Овощи и фрукты", items: [{ name: "Помидоры", quantity: 1, unit: "кг", price: 8000 }] },
+            { name: "Молочные продукты", items: [{ name: "Молоко", quantity: 2, unit: "л", price: 12000 }] },
+          ],
+        });
+      }
+
+      const systemPrompt = `You are a meal planning assistant for Uzbekistan. Create a shopping plan for ${people} people for ${days} days${budget ? ` with budget ${budget} UZS` : ""}${preferences ? `. Preferences: ${preferences}` : ""}. Output ONLY valid JSON with structure: { "plan_name": string, "total_estimated_cost": number, "categories": [{ "name": string, "items": [{ "name": string, "quantity": number, "unit": string, "price": number }] }] }. No markdown, only JSON.`;
+
+      const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: [{ role: "system", content: systemPrompt }, { role: "user", content: "Generate the shopping plan." }],
+          temperature: 0.3,
+          max_tokens: 2000,
+        }),
       });
+
+      const groqData = await groqRes.json();
+      const content = groqData.choices?.[0]?.message?.content || "{}";
+      let parsed: any = {};
+      try {
+        const match = content.match(/\{[\s\S]*\}/);
+        parsed = match ? JSON.parse(match[0]) : JSON.parse(content);
+      } catch {
+        parsed = { plan_name: `План на ${days} дней`, total_estimated_cost: null, categories: [] };
+      }
+
+      return jsonResponse(parsed);
     }
 
     // Fallback 404
-    return new Response(JSON.stringify({ error: "Not found", path: pathname }), {
-      status: 404,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Not found", path: pathname }, 404);
   } catch (err: any) {
     console.error("API error:", err);
-    return new Response(JSON.stringify({ error: err.message || "Internal server error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: err.message || "Internal server error" }, 500);
   }
 });
